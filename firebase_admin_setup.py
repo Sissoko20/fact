@@ -7,7 +7,8 @@ def _from_streamlit_secrets():
         import streamlit as st
         if "firebase" in st.secrets:
             info = dict(st.secrets["firebase"])
-            return credentials.Certificate(info), info.get("projectId")
+            # 🔥 corriger ici : utiliser project_id
+            return credentials.Certificate(info), info.get("project_id")
     except Exception:
         pass
     return None, None
@@ -36,7 +37,8 @@ def _from_env_base64():
 def _from_file():
     path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "serviceAccountKey.json")
     if os.path.exists(path):
-        info = json.load(open(path))
+        with open(path, "r") as f:
+            info = json.load(f)
         return credentials.Certificate(info), info.get("project_id")
     return None, None
 
