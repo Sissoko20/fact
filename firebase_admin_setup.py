@@ -6,44 +6,50 @@ def _from_streamlit_secrets():
     try:
         import streamlit as st
         if "firebase" in st.secrets:
-            return credentials.Certificate(dict(st.secrets["firebase"]))
+            info = dict(st.secrets["firebase"])
+            return credentials.Certificate(info), info.get("projectId")
     except Exception:
         pass
-    return None
+    return None, None
 
 def _from_env_json():
     raw = os.environ.get("SERVICE_ACCOUNT_JSON")
     if raw:
         try:
-            return credentials.Certificate(json.loads(raw))
+            info = json.loads(raw)
+            return credentials.Certificate(info), info.get("project_id")
         except json.JSONDecodeError:
             pass
-    return None
+    return None, None
 
 def _from_env_base64():
     b64 = os.environ.get("SERVICE_ACCOUNT_JSON_B64")
     if b64:
         try:
             decoded = base64.b64decode(b64).decode("utf-8")
-            return credentials.Certificate(json.loads(decoded))
+            info = json.loads(decoded)
+            return credentials.Certificate(info), info.get("project_id")
         except Exception:
             pass
-    return None
+    return None, None
 
 def _from_file():
     path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "serviceAccountKey.json")
     if os.path.exists(path):
-        return credentials.Certificate(path)
-    return None
+        info = json.load(open(path))
+        return credentials.Certificate(info), info.get("project_id")
+    return None, None
 
 def init_firebase():
     if firebase_admin._apps:
         return firebase_admin.get_app()
 
     for loader in (_from_streamlit_secrets, _from_env_json, _from_env_base64, _from_file):
-        cred = loader()
+        cred, project_id = loader()
         if cred:
-            return firebase_admin.initialize_app(cred)
+            return firebase_admin.initialize_app(cred, {
+                "projectId": project_id
+            })
 
     try:
         return firebase_admin.initialize_app()
