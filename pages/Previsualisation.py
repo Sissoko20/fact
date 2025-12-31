@@ -1,37 +1,39 @@
 import streamlit as st
 import sqlite3
 from datetime import datetime
-from components.pdf_generator import generate_pdf, build_facture_html
 
-
+from components.pdf_generator import build_facture_html
+from components.pdf_export import generate_pdf
 from components.sidebar import sidebar_navigation
 
 
-# Appel du menu global
+# --------------------------------------------------
+# Sidebar + Thème
+# --------------------------------------------------
 theme = sidebar_navigation()
 
-# Appliquer le thème choisi
 if theme == "Clair":
     st.markdown("""
         <style>
-        body { background-color: #ffffff; color: #000000; }
-        [data-testid="stSidebar"] { background-color: #f8f9fa; }
+            body { background-color: #ffffff; color: #000000; }
+            [data-testid="stSidebar"] { background-color: #f8f9fa; }
         </style>
     """, unsafe_allow_html=True)
 else:
     st.markdown("""
         <style>
-        body { background-color: #1e1e1e; color: #ffffff; }
-        [data-testid="stSidebar"] { background-color: #2c2c2c; }
+            body { background-color: #1e1e1e; color: #ffffff; }
+            [data-testid="stSidebar"] { background-color: #2c2c2c; }
         </style>
     """, unsafe_allow_html=True)
 
 
-
-
-# Connexion et initialisation DB
-conn = sqlite3.connect("data/factures.db")
+# --------------------------------------------------
+# Base de données SQLite
+# --------------------------------------------------
+conn = sqlite3.connect("data/factures.db", check_same_thread=False)
 cursor = conn.cursor()
+
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS factures (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,14 +46,23 @@ CREATE TABLE IF NOT EXISTS factures (
 """)
 conn.commit()
 
+
+# --------------------------------------------------
+# UI principale
+# --------------------------------------------------
 st.title("📝 Prévisualisation")
 
-modele = st.selectbox("Choisissez un modèle", ["Facture Professionnelle", "Reçu de Paiement"])
+modele = st.selectbox(
+    "Choisissez un modèle",
+    ["Facture Professionnelle", "Reçu de Paiement"]
+)
 
-# -------------------------------
+
+# ==================================================
 # FACTURE PROFESSIONNELLE
-# -------------------------------
+# ==================================================
 if modele == "Facture Professionnelle":
+
     client_name = st.text_input("Nom du client")
     client_phone = st.text_input("Téléphone du client")
     client_email = st.text_input("Email du client")
@@ -71,17 +82,46 @@ if modele == "Facture Professionnelle":
         })
 
     items = []
-    for i, item in enumerate(st.session_state.facture_items):
-        st.markdown(f"**Ligne {i+1}**")
-        description = st.text_input(f"Description {i+1}", value=item["description"], key=f"desc_{i}")
-        date = st.date_input(f"Date {i+1}", value=datetime.today(), key=f"date_{i}")
-        qty = st.number_input(f"Quantité {i+1}", min_value=1, value=item["qty"], key=f"qty_{i}")
-        price = st.number_input(f"Prix unitaire {i+1} (FCFA)", min_value=0.0, value=item["price"], key=f"price_{i}")
-        tva = st.checkbox(f"Appliquer TVA 18% à la ligne {i+1}", value=True, key=f"tva_{i}")
 
-        if st.button(f"🗑️ Supprimer la ligne {i+1}"):
+    for i, item in enumerate(st.session_state.facture_items):
+        st.markdown(f"**Ligne {i + 1}**")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            description = st.text_input(
+                f"Description {i + 1}",
+                value=item["description"],
+                key=f"desc_{i}"
+            )
+            qty = st.number_input(
+                f"Quantité {i + 1}",
+                min_value=1,
+                value=item["qty"],
+                key=f"qty_{i}"
+            )
+
+        with col2:
+            date = st.date_input(
+                f"Date {i + 1}",
+                value=datetime.today(),
+                key=f"date_{i}"
+            )
+            price = st.number_input(
+                f"Prix unitaire {i + 1} (FCFA)",
+                min_value=0.0,
+                value=item["price"],
+                key=f"price_{i}"
+            )
+
+        tva = st.checkbox(
+            f"Appliquer TVA 18% (ligne {i + 1})",
+            value=True,
+            key=f"tva_{i}"
+        )
+
+        if st.button(f"🗑️ Supprimer la ligne {i + 1}", key=f"delete_{i}"):
             st.session_state.facture_items.pop(i)
-            st.experimental_rerun()
+            st.rerun()
 
         items.append({
             "description": description,
@@ -98,18 +138,32 @@ if modele == "Facture Professionnelle":
         "items": items
     }
 
-    html_preview = build_facture_html(data, type_doc="Facture Professionnelle")
-    montant = sum(item["qty"] * item["price"] for item in items)
+    html_preview = build_facture_html(
+        data,
+        type_doc="Facture Professionnelle"
+    )
 
-# -------------------------------
+    montant = sum(i["qty"] * i["price"] for i in items)
+
+
+# ==================================================
 # REÇU DE PAIEMENT
-# -------------------------------
+# ==================================================
 else:
     client_name = st.text_input("Nom du client")
     client_phone = st.text_input("Téléphone du client")
     client_email = st.text_input("Email du client")
-    amount = st.number_input("Montant payé (FCFA)", min_value=0, value=0)
-    objet = st.text_input("Objet du paiement", "Paiement de services médicaux")
+
+    amount = st.number_input(
+        "Montant payé (FCFA)",
+        min_value=0,
+        value=0
+    )
+
+    objet = st.text_input(
+        "Objet du paiement",
+        "Paiement de services médicaux"
+    )
 
     data = {
         "client_name": client_name,
@@ -118,34 +172,52 @@ else:
         "amount": amount,
         "objet": objet
     }
-    html_preview = build_facture_html(data, type_doc="Reçu de Paiement")
+
+    html_preview = build_facture_html(
+        data,
+        type_doc="Reçu de Paiement"
+    )
+
     montant = amount
 
-# -------------------------------
-# PRÉVISUALISATION
-# -------------------------------
+
+# --------------------------------------------------
+# PRÉVISUALISATION HTML
+# --------------------------------------------------
 st.markdown("### 🔎 Aperçu")
 st.markdown(html_preview, unsafe_allow_html=True)
 
-# -------------------------------
+
+# --------------------------------------------------
 # GÉNÉRATION PDF + SAUVEGARDE
-# -------------------------------
-if st.button("📄 Générer PDF"):
-    filename = generate_pdf(html_preview, "document.pdf")
-    if filename:
+# --------------------------------------------------
+if st.button("📄 Générer le PDF"):
+
+    pdf_path = generate_pdf(html_preview)
+
+    if pdf_path:
         st.success("✅ PDF généré avec succès")
 
         cursor.execute(
-            "INSERT INTO factures (type, client, montant, objet, date) VALUES (?, ?, ?, ?, ?)",
-            (modele, data["client_name"], montant, data.get("objet", ""), datetime.today().strftime("%Y-%m-%d"))
+            """
+            INSERT INTO factures (type, client, montant, objet, date)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                modele,
+                data["client_name"],
+                montant,
+                data.get("objet", ""),
+                datetime.today().strftime("%Y-%m-%d")
+            )
         )
         conn.commit()
 
-        with open(filename, "rb") as f:
+        with open(pdf_path, "rb") as f:
             st.download_button(
                 label="⬇️ Télécharger le PDF",
                 data=f,
-                file_name=filename,
+                file_name="document.pdf",
                 mime="application/pdf"
             )
     else:
