@@ -1,0 +1,29 @@
+[server]
+runOnSave = true
+headless = true
+enableCORS = false
+enableXsrfProtection = true
+port = 8501
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+base="dark"
+primaryColor="#003366"
+backgroundColor="#1e1e1e"
+secondaryBackgroundColor="#2c2c2c"
+textColor="#ffffff"
+font="sans serif"
+
+
+[client]
+showSidebarNavigation = false  # Désactive le menu automatique multi-pages
+
+[general]
+showWarningOnDirectExecution = false
+
+[menuItems]
+help = "mailto:sidibeyakouba@ymail.com"
+reportBug = "mailto:sidibeyakouba@ymail.com"
+about = "MABOU-INSTRUMED Facturation - Système de gestion des factures et reçus médicaux"
