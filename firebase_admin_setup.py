@@ -50,7 +50,7 @@ def init_firebase():
         cred, project_id = loader()
         if cred:
             return firebase_admin.initialize_app(cred, {
-                "projectId": project_id
+                "project_id": project_id
             })
 
     try:
