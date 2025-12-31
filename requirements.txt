@@ -1,15 +1,19 @@
 # Core Streamlit app
 streamlit
 xhtml2pdf
+
 # Data manipulation & visualisation
 pandas
 matplotlib
 
-# PDF & documents (sans xhtml2pdf)
+# PDF & documents
 reportlab
 fpdf
 python-docx
 Pillow
+jinja2
+python-dateutil
+openpyxl
 
 # Firebase Admin SDK (gestion des rôles, Firestore, etc.)
 firebase-admin
