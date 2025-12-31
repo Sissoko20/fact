@@ -1,0 +1,36 @@
+# --- Clés et secrets ---
+serviceAccountKey.json
+*.pem
+*.key
+*.crt
+
+# --- Environnements virtuels ---
+.venv/
+env/
+venv/
+ENV/
+
+# --- Fichiers Python temporaires ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Logs et sorties ---
+*.log
+*.out
+*.err
+
+# --- Configurations locales ---
+*.env
+.env.local
+.DS_Store
+
+# --- Cache et build ---
+.cache/
+build/
+dist/
+*.egg-info/
+
+# --- Streamlit ---
+.streamlit/
