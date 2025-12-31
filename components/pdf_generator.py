@@ -1,105 +1,146 @@
-from fpdf import FPDF
+from xhtml2pdf import pisa
 from datetime import datetime
-import os
 
-class PDF(FPDF):
-    def header(self):
-        # Logo
-        if os.path.exists("assets/logo.png"):
-            self.image("assets/logo.png", 10, 8, 25)
-        # Titre
-        self.set_font("Arial", "B", 12)
-        self.cell(0, 10, "MABOU-INSTRUMED-SARL", ln=True, align="R")
-        self.set_font("Arial", "", 9)
-        self.cell(0, 5, "HAMDALLAYE ACI 2000 - IMMEUBLE MOUSSA ARAMA", ln=True, align="R")
-        self.cell(0, 5, "Tél : +223 74 56 43 95 | Email : sidibeyakouba@ymail.com", ln=True, align="R")
-        self.ln(10)
+def generate_pdf(html_content, filename="document.pdf"):
+    with open(filename, "wb") as f:
+        pisa_status = pisa.CreatePDF(html_content, dest=f)
+    if pisa_status.err:
+        return None
+    return filename
 
-    def footer(self):
-        self.set_y(-20)
-        self.set_font("Arial", "I", 8)
-        self.multi_cell(0, 5,
-            "MABOU-INSTRUMED-SARL | RCCM : Ma.Bko.2023.M11004 | NIF : 084148985H\n"
-            "HAMDALLAYE ACI 2000 | Tél : +223 74 56 43 95 | Email : sidibeyakouba@ymail.com",
-            align="C"
-        )
-
-def generate_pdf(data, type_doc="Facture Professionnelle", filename="document.pdf"):
-    pdf = PDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-
+def build_facture_html(data, type_doc="Facture"):
+    logo_path = "assets/logo.png"
+    signature_path = "assets/signature.png"
     today = datetime.today().strftime("%d/%m/%Y")
+
+    # Style CSS minimal
+    css_style = """
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 13px; line-height: 1.3; }
+        h3 { text-align: center; color: #003366; margin: 10px 0; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+        th { background-color: #f2f2f2; border: 1px solid #999; padding: 4px; text-align: center; }
+        td { border: 1px solid #999; padding: 4px; }
+        .footer { font-size: 11px; text-align: center; color: #555; margin-top: 20px; }
+        .signature { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 20px; }
+    </style>
+    """
+
+    footer_text = f"""
+    <div class="footer">
+    MABOU-INSTRUMED-SARL | RCCM : Ma.Bko.2023.M11004 | NIF : 084148985H | HAMDALLAYE ACI 2000  
+    Tél : +223 74 56 43 95 | IMMEUBLE MOUSSA ARAMA | Email : sidibeyakouba@ymail.com
+    </div>
+    """
 
     # ---------------- FACTURE ----------------
     if type_doc == "Facture Professionnelle":
-        pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, "FACTURE", ln=True, align="C")
-        pdf.ln(5)
-
-        # Client
-        pdf.set_font("Arial", "", 11)
-        pdf.cell(0, 10, f"Client : {data['client_name']}", ln=True)
-        pdf.cell(0, 10, f"Tél : {data.get('client_phone','')}", ln=True)
-        pdf.cell(0, 10, f"Email : {data.get('client_email','')}", ln=True)
-        pdf.ln(5)
-
-        # Tableau
-        pdf.set_font("Arial", "B", 10)
-        pdf.cell(60, 8, "Description", 1)
-        pdf.cell(25, 8, "Date", 1, align="C")
-        pdf.cell(20, 8, "Qté", 1, align="C")
-        pdf.cell(30, 8, "Prix unitaire", 1, align="R")
-        pdf.cell(20, 8, "TVA", 1, align="C")
-        pdf.cell(35, 8, "Montant", 1, align="R")
-        pdf.ln()
-
+        items_html = ""
         total_ht = 0
         for item in data["items"]:
             montant = item["qty"] * item["price"]
             total_ht += montant
-            pdf.set_font("Arial", "", 10)
-            pdf.cell(60, 8, item["description"], 1)
-            pdf.cell(25, 8, item["date"], 1, align="C")
-            pdf.cell(20, 8, str(item["qty"]), 1, align="C")
-            pdf.cell(30, 8, f"{item['price']:.2f}", 1, align="R")
-            pdf.cell(20, 8, f"{item.get('tva',0)}%", 1, align="C")
-            pdf.cell(35, 8, f"{montant:.2f}", 1, align="R")
-            pdf.ln()
+            tva = item.get("tva", 0)
+            items_html += f"""
+            <tr>
+                <td>{item['description']}</td>
+                <td style="text-align:center;">{item['date']}</td>
+                <td style="text-align:center;">{item['qty']}</td>
+                <td style="text-align:right;">{item['price']:.2f} FCFA</td>
+                <td style="text-align:center;">{tva}%</td>
+                <td style="text-align:right;">{montant:.2f} FCFA</td>
+            </tr>
+            """
 
         tva_total = total_ht * 0.18
         total_ttc = total_ht + tva_total
 
-        pdf.ln(5)
-        pdf.set_font("Arial", "B", 11)
-        pdf.cell(0, 8, f"Total HT : {total_ht:.2f} FCFA", ln=True)
-        pdf.cell(0, 8, f"TVA 18% : {tva_total:.2f} FCFA", ln=True)
-        pdf.cell(0, 8, f"Total TTC : {total_ttc:.2f} FCFA", ln=True)
+        html = f"""
+        {css_style}
+        <div style="width:650px; padding:10px;">
+            <!-- En-tête -->
+            <div style="display:flex; justify-content:space-between;">
+                <div>
+                    <img src="{logo_path}" width="70"><br>
+                    <b>MABOU-INSTRUMED-SARL</b><br>
+                    HAMDALLAYE ACI 2000<br>
+                    IMMEUBLE MOUSSA ARAMA<br>
+                    RUE 384, PORTE 249<br>
+                    Tél : +223 74 56 43 95<br>
+                    Email : sidibeyakouba@ymail.com
+                </div>
+                <div style="text-align:right;">
+                    <b>Client :</b> {data['client_name']}<br>
+                    Tél : {data.get('client_phone','')}<br>
+                    Email : {data.get('client_email','')}
+                </div>
+            </div>
 
-        pdf.ln(10)
-        pdf.cell(0, 8, f"Fait à Bamako, le {today}", ln=True, align="R")
-        if os.path.exists("assets/signature.png"):
-            pdf.image("assets/signature.png", x=150, y=pdf.get_y(), w=50)
+            <hr>
+            <h3>FACTURE</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th><th>Date</th><th>Qté</th><th>Prix unitaire</th><th>TVA</th><th>Montant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {items_html}
+                </tbody>
+            </table>
+
+            <p><b>Total HT :</b> {total_ht:.2f} FCFA</p>
+            <p><b>TVA 18% :</b> {tva_total:.2f} FCFA</p>
+            <p><b>Total TTC :</b> {total_ttc:.2f} FCFA</p>
+
+            <hr>
+            <div class="signature">
+                <p style="margin:0;">Fait à Bamako, le {today}</p>
+                <img src="{signature_path}" width="220">
+            </div>
+
+            {footer_text}
+        </div>
+        """
+        return html
 
     # ---------------- REÇU ----------------
     elif type_doc == "Reçu de Paiement":
-        pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, "REÇU DE PAIEMENT", ln=True, align="C")
-        pdf.ln(5)
+        html = f"""
+        {css_style}
+        <div style="width:650px; padding:10px;">
+            <!-- En-tête -->
+            <div style="display:flex; justify-content:space-between;">
+                <div>
+                    <img src="{logo_path}" width="70"><br>
+                    <b>MABOU-INSTRUMED-SARL</b><br>
+                    HAMDALLAYE ACI 2000<br>
+                    IMMEUBLE MOUSSA ARAMA<br>
+                    RUE 384, PORTE 249<br>
+                    Tél : +223 74 56 43 95<br>
+                    Email : sidibeyakouba@ymail.com
+                </div>
+                <div style="text-align:right;">
+                    <b>Client :</b> {data['client_name']}<br>
+                    Tél : {data.get('client_phone','')}<br>
+                    Email : {data.get('client_email','')}
+                </div>
+            </div>
 
-        pdf.set_font("Arial", "", 11)
-        pdf.cell(0, 10, f"Client : {data['client_name']}", ln=True)
-        pdf.cell(0, 10, f"Tél : {data.get('client_phone','')}", ln=True)
-        pdf.cell(0, 10, f"Email : {data.get('client_email','')}", ln=True)
-        pdf.ln(5)
+            <hr>
+            <h3>REÇU DE PAIEMENT</h3>
 
-        pdf.cell(0, 10, f"Objet : {data.get('objet','')}", ln=True)
-        pdf.cell(0, 10, f"Montant payé : {data.get('amount',0):.2f} FCFA", ln=True)
+            <p><b>Objet :</b> {data.get('objet','')}</p>
+            <p><b>Montant payé :</b> {data.get('amount',0):.2f} FCFA</p>
 
-        pdf.ln(10)
-        pdf.cell(0, 8, f"Fait à Bamako, le {today}", ln=True, align="R")
-        if os.path.exists("assets/signature.png"):
-            pdf.image("assets/signature.png", x=150, y=pdf.get_y(), w=50)
+            <hr>
+            <div class="signature">
+                <p style="margin:0;">Fait à Bamako, le {today}</p>
+                <img src="{signature_path}" width="220">
+            </div>
 
-    pdf.output(filename)
-    return filename
+            {footer_text}
+        </div>
+        """
+        return html
