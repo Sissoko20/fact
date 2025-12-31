@@ -1,19 +1,19 @@
 # Core Streamlit
 streamlit
 
-# PDF HTML → PDF (cloud compatible)
+# PDF HTML -> PDF (cloud safe)
 xhtml2pdf
 reportlab
 fpdf
 fpdf2
 Pillow
-
-# Data
-pandas
-matplotlib
-openpyxl
-python-dateutil
 jinja2
+python-dateutil
+
+# Data & visualisation (PINNÉ)
+pandas
+matplotlib==3.7.5
+openpyxl
 
 # Firebase / Google
 firebase-admin
