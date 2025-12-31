@@ -1,38 +1,31 @@
-# Core Streamlit app
+# Core Streamlit
 streamlit
-xhtml2pdf
-fpdf2
-# Data manipulation & visualisation
-pandas
-matplotlib
 
-# PDF & documents
+# PDF HTML → PDF (cloud compatible)
+xhtml2pdf
 reportlab
 fpdf
-python-docx
+fpdf2
 Pillow
-jinja2
-python-dateutil
+
+# Data
+pandas
+matplotlib
 openpyxl
+python-dateutil
+jinja2
 
-# Firebase Admin SDK (gestion des rôles, Firestore, etc.)
+# Firebase / Google
 firebase-admin
-
-# Pyrebase (auth côté client)
 pyrebase4
-
-# Crypto (nécessaire pour Pyrebase)
 pycryptodome
 pycryptodomex
-
-# Google Cloud clients (Firestore, Storage)
 google-auth
 google-auth-oauthlib
 google-cloud-firestore
 google-cloud-storage
 
-# Utilitaires
+# Utils
 requests
 setuptools
 wheel
-weasyprint
