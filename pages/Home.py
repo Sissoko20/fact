@@ -1,40 +1,56 @@
 import streamlit as st
 from components.sidebar import sidebar_navigation
 
+# -------------------------------
+# Configuration de la page
+# -------------------------------
 st.set_page_config(page_title="Gestion de Factures", layout="wide")
 
-# Vérifier si connecté
+# -------------------------------
+# Afficher la sidebar personnalisée
+# -------------------------------
+theme = sidebar_navigation()
+
+# -------------------------------
+# Vérification d'authentification
+# -------------------------------
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
     st.switch_page("pages/Login.py")
     st.stop()
 
-# Menu global
-theme = sidebar_navigation()
-
-# Thème clair/sombre
-if theme == "Clair":
-    st.markdown("""<style>body{background:#fff;color:#000}</style>""", unsafe_allow_html=True)
-else:
-    st.markdown("""<style>body{background:#1e1e1e;color:#fff}</style>""", unsafe_allow_html=True)
-
+# -------------------------------
 # Contenu principal
+# -------------------------------
 st.image("assets/logo.png", width=150)
 st.title("Bienvenue sur MABOU-INSTRUMED Facturation")
 
+# -------------------------------
+# Actions rapides
+# -------------------------------
 st.subheader("⚙️ Actions rapides")
+
 col1, col2, col3 = st.columns(3)
 
+# ---- Colonne 1 : Facture ----
 with col1:
     st.markdown("### 🧾 Créer une facture")
     if st.button("➕ Nouvelle Facture"):
-        st.switch_page("pages/4_Previsualisation.py")
+        st.switch_page("pages/Previsualisation.py")
 
+# ---- Colonne 2 : Reçu ----
 with col2:
     st.markdown("### 💰 Créer un reçu")
     if st.button("➕ Nouveau Reçu"):
-        st.switch_page("pages/4_Previsualisation.py")
+        st.switch_page("pages/Previsualisation.py")
 
+# ---- Colonne 3 : Gestion utilisateurs ----
 with col3:
     st.markdown("### 👥 Gestion des utilisateurs")
     if st.button("🔑 Gérer les utilisateurs"):
-        st.switch_page("pages/3_Signup.py")
+        st.switch_page("pages/Signup.py")
+
+# -------------------------------
+# Footer / Informations
+# -------------------------------
+st.markdown("---")
+st.caption("© 2025 MABOU-INSTRUMED - Système de gestion des factures et reçus médicaux")
