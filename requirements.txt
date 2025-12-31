@@ -12,7 +12,7 @@ python-dateutil
 
 # Data & visualisation (PINNÉ)
 pandas
-matplotlib==3.7.5
+
 openpyxl
 
 # Firebase / Google
