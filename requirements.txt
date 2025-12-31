@@ -1,7 +1,7 @@
 # Core Streamlit app
 streamlit
 xhtml2pdf
-
+fpdf2
 # Data manipulation & visualisation
 pandas
 matplotlib
