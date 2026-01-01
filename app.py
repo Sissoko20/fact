@@ -1,41 +1,15 @@
 import streamlit as st
-import os
 
-SESSION_FILE = "data/session.txt"
-
-# -------------------------------
-# Fonctions session persistante
-# -------------------------------
-def load_session():
-    if os.path.exists(SESSION_FILE):
-        with open(SESSION_FILE) as f:
-            content = f.read().strip().split("|")
-            if len(content) == 2 and content[0] == "authenticated":
-                st.session_state["authenticated"] = True
-                st.session_state["role"] = content[1]
-            else:
-                st.session_state["authenticated"] = False
-    else:
-        st.session_state["authenticated"] = False
-
-def clear_session():
-    if os.path.exists(SESSION_FILE):
-        os.remove(SESSION_FILE)
-    st.session_state["authenticated"] = False
-    st.session_state["role"] = None
-
-# -------------------------------
-# Configuration de la page
-# -------------------------------
 st.set_page_config(page_title="Tableau de bord", page_icon="📊", layout="wide")
 
-# -------------------------------
-# Vérification d'authentification
-# -------------------------------
-if "authenticated" not in st.session_state:
-    load_session()
-
-if not st.session_state.get("authenticated", False):
+# Vérifier session via query params
+params = st.experimental_get_query_params()
+if "auth" in params and params["auth"][0] == "true":
+    st.session_state["authenticated"] = True
+    st.session_state["role"] = params.get("role", ["user"])[0]
+    st.session_state["email"] = params.get("email", [""])[0]
+else:
+    st.session_state["authenticated"] = False
     st.switch_page("pages/Login.py")
     st.stop()
 
@@ -48,8 +22,14 @@ st.sidebar.page_link("app.py", label="🏠 Tableau de bord", icon="📊")
 st.sidebar.page_link("pages/Previsualisation.py", label="🧾 Créer une facture / reçu")
 st.sidebar.page_link("pages/Admin.py", label="👥 Gestion des utilisateurs")
 
+st.sidebar.markdown(f"👤 Connecté : {st.session_state['email']} ({st.session_state['role']})")
+
 if st.sidebar.button("🔒 Déconnexion"):
-    clear_session()
+    # Supprimer les query params
+    st.experimental_set_query_params()
+    st.session_state["authenticated"] = False
+    st.session_state["role"] = None
+    st.session_state["email"] = None
     st.switch_page("pages/Login.py")
 
 # -------------------------------
