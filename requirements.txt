@@ -24,3 +24,6 @@ google-cloud-storage
 
 # Utils
 requests   
+
+cairocffi
+cffi
