@@ -4,6 +4,10 @@ from datetime import datetime
 from streamlit_option_menu import option_menu
 from components.pdf_generator import generate_pdf, build_facture_html
 from firebase_admin_setup import db   # ton module qui initialise Firebase
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
 
 # -------------------------------
 # Vérification d'authentification
@@ -23,10 +27,10 @@ with st.sidebar:
     st.image("assets/logo.png", width=120)
     selected = option_menu(
         "Navigation",
-        ["🏠 Tableau de bord", "🧾 Factures", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
+        ["🏠 Tableau de bord", "🧾 Facture de doit", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
         icons=["house", "file-text", "cash", "people", "box-arrow-right"],
         menu_icon="cast",
-        default_index=1,  # 👉 Factures/Reçus actif
+        default_index=1,  # 👉 Facture de doit actif
     )
 
 # -------------------------------
@@ -42,11 +46,11 @@ elif selected == "🔒 Déconnexion":
     st.switch_page("pages/Login.py")
 
 # -------------------------------
-# Contenu principal : Prévisualisation
+# Contenu principal : Facture / Reçu
 # -------------------------------
 st.title("📝 Prévisualisation")
 
-modele = st.selectbox("Choisissez un modèle", ["Facture Professionnelle", "Reçu de Paiement"])
+modele = st.selectbox("Choisissez un modèle", ["Facture de doit", "Reçu de Paiement"])
 
 # Connexion DB
 conn = sqlite3.connect("data/factures.db")
@@ -64,9 +68,9 @@ CREATE TABLE IF NOT EXISTS factures (
 conn.commit()
 
 # -------------------------------
-# Facture
+# Facture de doit
 # -------------------------------
-if modele == "Facture Professionnelle":
+if modele == "Facture de doit":
     client_name = st.text_input("Nom du client")
     client_phone = st.text_input("Téléphone du client")
     client_email = st.text_input("Email du client")
@@ -106,7 +110,7 @@ if modele == "Facture Professionnelle":
         })
 
     data = {"client_name": client_name, "client_phone": client_phone, "client_email": client_email, "items": items}
-    html_preview = build_facture_html(data, type_doc="Facture Professionnelle")
+    html_preview = build_facture_html(data, type_doc="Facture de doit")
     montant = sum(item["qty"] * item["price"] for item in items)
 
 # -------------------------------
@@ -125,11 +129,8 @@ else:
     montant = amount
 
 # -------------------------------
-# Aperçu + PDF
+# Génération PDF + Sauvegarde
 # -------------------------------
-st.markdown("### 🔎 Aperçu")
-st.markdown(html_preview, unsafe_allow_html=True)
-
 if st.button("📄 Générer PDF"):
     filename = generate_pdf(html_preview, "document.pdf")
     if filename:
@@ -138,8 +139,8 @@ if st.button("📄 Générer PDF"):
         facture_doc = {
             "type": modele,
             "client_name": data["client_name"],
-            "client_phone": data["client_phone"],   # ✅ correction
-            "client_email": data["client_email"],   # ✅ correction
+            "client_phone": data["client_phone"],
+            "client_email": data["client_email"],
             "items": data.get("items", []),
             "objet": data.get("objet", ""),
             "montant": montant,
@@ -150,32 +151,49 @@ if st.button("📄 Générer PDF"):
 
         with open(filename, "rb") as f:
             st.download_button("⬇️ Télécharger le PDF", f, file_name=filename, mime="application/pdf")
+
+        # Bouton Imprimer
+        st.markdown(
+            """
+            <button onclick="window.print()" 
+                    style="background-color:#2E86C1;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer;">
+                🖨️ Imprimer la facture
+            </button>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Bouton Envoyer par SMTP
+        if st.button("📧 Envoyer par email (SMTP)"):
+            subject = f"{modele} - {data['client_name']}"
+            body = f"Bonjour {data['client_name']},\n\nVeuillez trouver ci-joint votre {modele}.\nMontant : {montant} FCFA.\n\nCordialement,\nMABOU-INSTRUMED"
+
+            try:
+                sender = "ton_email@gmail.com"
+                password = "ton_mot_de_passe_app"  # ⚠️ utilise un mot de passe d’application
+                recipient = data["client_email"]
+
+                msg = MIMEMultipart()
+                msg['From'] = sender
+                msg['To'] = recipient
+                msg['Subject'] = subject
+                msg.attach(MIMEText(body, 'plain'))
+
+                with open(filename, "rb") as f:
+                    attach = MIMEApplication(f.read(), _subtype="pdf")
+                    attach.add_header('Content-Disposition', 'attachment', filename=filename)
+                    msg.attach(attach)
+
+                server = smtplib.SMTP("smtp.gmail.com", 587)
+                server.starttls()
+                server.login(sender, password)
+                server.send_message(msg)
+                server.quit()
+
+                st.success("✅ Email envoyé avec succès")
+            except Exception as e:
+                st.error(f"❌ Erreur envoi email : {e}")
     else:
         st.error("❌ Erreur lors de la génération du PDF")
-
-# -------------------------------
-# Boutons supplémentaires
-# -------------------------------
-st.markdown(
-    """
-    <button onclick="window.print()" style="background-color:#2E86C1;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer;">
-        🖨️ Imprimer la facture
-    </button>
-    """,
-    unsafe_allow_html=True
-)
-
-subject = f"Facture - {data.get('client_name','')}"
-body = f"Bonjour,\n\nVeuillez trouver ci-joint votre {modele}.\n\nMontant: {montant} FCFA\n\nCordialement,\nMABOU-INSTRUMED"
-mailto_link = f"mailto:{data.get('client_email','')}?subject={subject}&body={body}"
-
-st.markdown(
-    f"""
-    <a href="{mailto_link}" style="background-color:#27AE60;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer;text-decoration:none;">
-        📧 Envoyer par email
-    </a>
-    """,
-    unsafe_allow_html=True
-)
 
 conn.close()
