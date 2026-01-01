@@ -9,16 +9,17 @@ port = 8501
 gatherUsageStats = true
 
 [theme]
-base="dark"
-primaryColor="#003366"
-backgroundColor="#1e1e1e"
-secondaryBackgroundColor="#2c2c2c"
-textColor="#ffffff"
-font="sans serif"
+base = "dark"
+primaryColor = "#003366"
+backgroundColor = "#1e1e1e"
+secondaryBackgroundColor = "#2c2c2c"
+textColor = "#ffffff"
+font = "sans serif"
 
-[general]
-# Valeur par défaut, pas besoin de la forcer
-# showWarningOnDirectExecution = true
+[client]
+# Désactive la navigation automatique du dossier pages
+showSidebarNavigation = false
 
-# Menu par défaut de Streamlit
-# Si tu veux garder ton menu personnalisé, tu peux remettre [menuItems]
+[toolbar]
+# Cache les options avancées (menu hamburger)
+mode = "minimal"   
