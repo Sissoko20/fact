@@ -26,7 +26,7 @@ with st.sidebar:
         ["🏠 Tableau de bord", "🧾 Factures", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
         icons=["house", "file-text", "cash", "people", "box-arrow-right"],
         menu_icon="cast",
-        default_index=1,  # 👉 ici on met Factures/Reçus comme actif
+        default_index=1,  # 👉 Factures/Reçus actif
     )
 
 # -------------------------------
@@ -134,11 +134,12 @@ if st.button("📄 Générer PDF"):
     filename = generate_pdf(html_preview, "document.pdf")
     if filename:
         st.success("✅ PDF généré avec succès")
+
         facture_doc = {
             "type": modele,
             "client_name": data["client_name"],
-            "client_phone": data.get("client_phone", ""),
-            "client_email": data.get("client_email", ""),
+            "client_phone": data["client_phone"],   # ✅ correction
+            "client_email": data["client_email"],   # ✅ correction
             "items": data.get("items", []),
             "objet": data.get("objet", ""),
             "montant": montant,
@@ -146,8 +147,35 @@ if st.button("📄 Générer PDF"):
         }
         db.collection("factures").add(facture_doc)
         st.success("💾 Facture enregistrée dans Firestore")
+
         with open(filename, "rb") as f:
             st.download_button("⬇️ Télécharger le PDF", f, file_name=filename, mime="application/pdf")
     else:
         st.error("❌ Erreur lors de la génération du PDF")
+
+# -------------------------------
+# Boutons supplémentaires
+# -------------------------------
+st.markdown(
+    """
+    <button onclick="window.print()" style="background-color:#2E86C1;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer;">
+        🖨️ Imprimer la facture
+    </button>
+    """,
+    unsafe_allow_html=True
+)
+
+subject = f"Facture - {data.get('client_name','')}"
+body = f"Bonjour,\n\nVeuillez trouver ci-joint votre {modele}.\n\nMontant: {montant} FCFA\n\nCordialement,\nMABOU-INSTRUMED"
+mailto_link = f"mailto:{data.get('client_email','')}?subject={subject}&body={body}"
+
+st.markdown(
+    f"""
+    <a href="{mailto_link}" style="background-color:#27AE60;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer;text-decoration:none;">
+        📧 Envoyer par email
+    </a>
+    """,
+    unsafe_allow_html=True
+)
+
 conn.close()
