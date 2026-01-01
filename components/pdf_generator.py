@@ -34,7 +34,7 @@ def build_facture_html(data, type_doc="Facture"):
     """
 
     # ---------------- FACTURE ----------------
-    if type_doc == "Facture Professionnelle":
+    if type_doc == "Facture de doit":
         items_html = ""
         total_ht = 0
         for item in data["items"]:
