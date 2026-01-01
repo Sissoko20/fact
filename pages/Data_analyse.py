@@ -154,14 +154,14 @@ if st.button("🆕 Initialiser la base"):
     """)
     conn.commit()
     st.success("✅ Base initialisée")
-    st.experimental_rerun()   # 👈 relance après action
+    st.rerun()    # 👈 relance après action
 
 # Vider toutes les factures
 if st.button("🗑️ Vider toutes les factures"):
     cursor.execute("DELETE FROM factures")
     conn.commit()
     st.warning("⚠️ Toutes les factures ont été supprimées")
-    st.experimental_rerun()   # 👈 relance après action
+    st.rerun()    # 👈 relance après action
 
 # Supprimer une facture spécifique
 facture_id = st.number_input("ID de la facture à supprimer", min_value=1, step=1)
@@ -169,7 +169,7 @@ if st.button("❌ Supprimer cette facture"):
     cursor.execute("DELETE FROM factures WHERE id = ?", (facture_id,))
     conn.commit()
     st.info(f"Facture ID {facture_id} supprimée")
-    st.experimental_rerun()   # 👈 relance après action
+    st.rerun()    # 👈 relance après action
 
 # Modifier une facture
 st.subheader("✏️ Modifier une facture")
@@ -181,4 +181,4 @@ if st.button("💾 Mettre à jour"):
     cursor.execute("UPDATE factures SET client=?, montant=? WHERE id=?", (new_client, new_montant, edit_id))
     conn.commit()
     st.success(f"Facture ID {edit_id} mise à jour")
-    st.experimental_rerun()   # 👈 relance après action
+    st.rerun()   # 👈 relance après action
