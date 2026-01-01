@@ -14,8 +14,11 @@ if "authenticated" not in st.session_state:
 
 if not st.session_state["authenticated"]:
     st.warning("⚠️ Veuillez vous connecter d'abord.")
+    st.switch_page("pages/Login.py")  # fonctionne si Login.py existe dans pages/
     st.stop()
-
+# 👉 Bouton pour créer un compte
+if st.button("🧾 Créer un compte"):
+    st.switch_page("pages/Admin.py")
 # -------------------------------
 # Barre de navigation moderne
 # -------------------------------
