@@ -9,7 +9,6 @@ st.set_page_config(page_title="Gestion de Factures", layout="wide")
 # -------------------------------
 # Afficher la sidebar personnalisée
 # -------------------------------
-theme = sidebar_navigation()
 
 # -------------------------------
 # Vérification d'authentification

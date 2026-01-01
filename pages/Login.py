@@ -11,7 +11,7 @@ if "authenticated" not in st.session_state:
 
 # Si déjà connecté → redirection
 if st.session_state["authenticated"]:
-    st.switch_page("pages/Home.py")
+    st.switch_page("app.py")
     st.stop()
 
 st.title("🔑 Connexion")
@@ -28,10 +28,10 @@ with st.form("login_form"):
             st.session_state["role"] = role
             st.session_state["email"] = email
             st.success(f"✅ Connecté en tant que {role}")
-            st.switch_page("pages/Home.py")
+            st.switch_page("app.py")
         else:
             st.error("❌ Utilisateur introuvable ou rôle non défini")
 
 # 👉 Bouton pour créer un compte
 if st.button("🧾 Créer un compte"):
-    st.switch_page("pages/Signup.py")
+    st.switch_page("pages/Admin.py")
