@@ -16,9 +16,7 @@ if not st.session_state["authenticated"]:
     st.warning("⚠️ Veuillez vous connecter d'abord.")
     st.switch_page("pages/Login.py")  # fonctionne si Login.py existe dans pages/
     st.stop()
-# 👉 Bouton pour créer un compte
-if st.button("🧾 Créer un compte"):
-    st.switch_page("pages/Admin.py")
+
 # -------------------------------
 # Barre de navigation moderne
 # -------------------------------
@@ -36,6 +34,7 @@ with st.sidebar:
 # Logique de navigation
 # -------------------------------
 if selected == "🏠 Tableau de bord":
+    # Pas besoin de switch_page ici, tu es déjà dans app.py
     st.image("assets/logo.png", width=150)
     st.title("Bienvenue sur MABOU-INSTRUMED Facturation")
 
@@ -45,34 +44,31 @@ if selected == "🏠 Tableau de bord":
     with col1:
         st.markdown("### 🧾 Créer une facture")
         if st.button("➕ Nouvelle Facture"):
-            selected = "🧾 Factures"
+            st.switch_page("pages/Previsualisation.py")
 
     with col2:
         st.markdown("### 💰 Créer un reçu")
         if st.button("➕ Nouveau Reçu"):
-            selected = "💰 Reçus"
+            st.switch_page("pages/Previsualisation.py")
 
     with col3:
         st.markdown("### 👥 Gestion des utilisateurs")
         if st.button("🔑 Gérer les utilisateurs"):
-            selected = "👥 Utilisateurs"
+            st.switch_page("pages/Admin.py")
 
     st.markdown("---")
     st.caption("© 2025 MABOU-INSTRUMED - Système de gestion des factures et reçus médicaux")
 
 elif selected == "🧾 Factures":
-    st.title("Créer une facture")
-    st.write("👉 Ici tu mets ton formulaire de facturation.")
+    st.switch_page("pages/Previsualisation.py")
 
 elif selected == "💰 Reçus":
-    st.title("Créer un reçu")
-    st.write("👉 Ici tu mets ton formulaire de reçu.")
+    st.switch_page("pages/Previsualisation.py")
 
 elif selected == "👥 Utilisateurs":
-    st.title("Gestion des utilisateurs")
-    st.write("👉 Ici tu mets ton interface Admin.")
+    st.switch_page("pages/Admin.py")
 
 elif selected == "🔒 Déconnexion":
     st.session_state["authenticated"] = False
     st.info("✅ Déconnecté")
-    st.stop()
+    st.switch_page("pages/Login.py")
