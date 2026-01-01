@@ -1,32 +1,24 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-from firebase_admin_setup import db   # ton module qui initialise Firebase
+from firebase_admin_setup import db
 
-# -------------------------------
-# Configuration de la page
-# -------------------------------
-st.set_page_config(page_title="Dashboard - Analyse", layout="wide")
-st.title("📊 Dashboard - Analyse des factures et reçus")
+# Vérification session persistante
+if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
+    st.error("⛔ Vous devez être connecté")
+    st.stop()
 
-# -------------------------------
-# Vérification rôle administrateur
-# -------------------------------
-if "role" not in st.session_state or st.session_state["role"] != "admin":
+if st.session_state["role"] != "admin":
     st.error("⛔ Accès réservé aux administrateurs")
     st.stop()
 
-# -------------------------------
-# Charger les données Firestore
-# -------------------------------
-factures_ref = db.collection("factures").stream()
-rows = []
-for doc in factures_ref:
-    d = doc.to_dict()
-    d["id"] = doc.id  # garder l’ID Firestore pour suppression/modif
-    rows.append(d)
+st.title("📊 Dashboard - Analyse des factures")
 
+# Charger les factures Firestore
+factures_ref = db.collection("factures").stream()
+rows = [doc.to_dict() | {"id": doc.id} for doc in factures_ref]
 df = pd.DataFrame(rows)
+
+st.dataframe(df)
 
 # -------------------------------
 # Aperçu global
