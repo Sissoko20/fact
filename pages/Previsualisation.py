@@ -107,17 +107,27 @@ st.markdown(html_preview, unsafe_allow_html=True)
 # -------------------------------
 # GÉNÉRATION PDF + SAUVEGARDE
 # -------------------------------
+
 if st.button("📄 Générer PDF"):
     filename = generate_pdf(html_preview, "document.pdf")
     if filename:
         st.success("✅ PDF généré avec succès")
 
-        cursor.execute(
-            "INSERT INTO factures (type, client, montant, objet, date) VALUES (?, ?, ?, ?, ?)",
-            (modele, data["client_name"], montant, data.get("objet", ""), datetime.today().strftime("%Y-%m-%d"))
-        )
-        conn.commit()
+        # --- Sauvegarde dans Firestore ---
+        facture_doc = {
+            "type": modele,
+            "client_name": data["client_name"],
+            "client_phone": data.get("client_phone", ""),
+            "client_email": data.get("client_email", ""),
+            "items": data.get("items", []),
+            "objet": data.get("objet", ""),
+            "montant": montant,
+            "date": datetime.today().strftime("%Y-%m-%d")
+        }
+        db.collection("factures").add(facture_doc)
+        st.success("💾 Facture enregistrée dans Firestore")
 
+        # --- Téléchargement PDF ---
         with open(filename, "rb") as f:
             st.download_button(
                 label="⬇️ Télécharger le PDF",

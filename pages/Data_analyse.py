@@ -6,25 +6,6 @@ import matplotlib.pyplot as plt
 from components.sidebar import sidebar_navigation
 
 
-# Appel du menu global
-theme = sidebar_navigation()
-
-# Appliquer le thème choisi
-if theme == "Clair":
-    st.markdown("""
-        <style>
-        body { background-color: #ffffff; color: #000000; }
-        [data-testid="stSidebar"] { background-color: #f8f9fa; }
-        </style>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown("""
-        <style>
-        body { background-color: #1e1e1e; color: #ffffff; }
-        [data-testid="stSidebar"] { background-color: #2c2c2c; }
-        </style>
-    """, unsafe_allow_html=True)
-
 
 
 st.set_page_config(page_title="Dashboard - Analyse", layout="wide")
