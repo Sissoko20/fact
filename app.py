@@ -1,16 +1,18 @@
 import streamlit as st
 
+# -------------------------------
+# Configuration de la page
+# -------------------------------
 st.set_page_config(page_title="Tableau de bord", page_icon="📊", layout="wide")
 
-# Vérifier session via query params
-params = st.query_params
-if "auth" in params and params["auth"] == "true":
-    st.session_state["authenticated"] = True
-    st.session_state["role"] = params.get("role", "user")
-    st.session_state["email"] = params.get("email", "")
-else:
+# -------------------------------
+# Vérification d'authentification
+# -------------------------------
+if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
-    st.switch_page("pages/Login.py")
+
+if not st.session_state["authenticated"]:
+    st.switch_page("pages/Login.py")   # 👈 Login à la racine
     st.stop()
 
 # -------------------------------
@@ -18,19 +20,14 @@ else:
 # -------------------------------
 st.sidebar.image("assets/logo.png", width=100)
 st.sidebar.markdown("### 📂 Navigation")
-st.sidebar.page_link("app.py", label="🏠 Tableau de bord", icon="📊")
+st.sidebar.page_link("app.py", label="🏠 Tableau de bord", icon="📊")   # 👈 fichier principal
 st.sidebar.page_link("pages/Previsualisation.py", label="🧾 Créer une facture / reçu")
 st.sidebar.page_link("pages/Admin.py", label="👥 Gestion des utilisateurs")
 
-st.sidebar.markdown(f"👤 Connecté : {st.session_state['email']} ({st.session_state['role']})")
 
 if st.sidebar.button("🔒 Déconnexion"):
-    # Supprimer les query params
-    st.query_params.clear()
     st.session_state["authenticated"] = False
-    st.session_state["role"] = None
-    st.session_state["email"] = None
-    st.switch_page("pages/Login.py")
+    st.switch_page("pages/Login.py")   # 👈 Login à la racine
 
 # -------------------------------
 # Contenu principal
