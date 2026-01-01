@@ -3,16 +3,37 @@ import pandas as pd
 import sqlite3
 import matplotlib.pyplot as plt
 
-from components.sidebar import sidebar_navigation
-
-
-
-
+# -------------------------------
+# Configuration de la page
+# -------------------------------
 st.set_page_config(page_title="Dashboard - Analyse", layout="wide")
 st.title("📊 Dashboard - Analyse des factures et reçus")
 
-# Connexion DB
+# -------------------------------
+# Vérification rôle administrateur
+# -------------------------------
+if "role" not in st.session_state or st.session_state["role"] != "admin":
+    st.error("⛔ Accès réservé aux administrateurs")
+    st.stop()
+
+# -------------------------------
+# Connexion DB + Initialisation
+# -------------------------------
 conn = sqlite3.connect("data/factures.db")
+cursor = conn.cursor()
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS factures (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    type TEXT,
+    client TEXT,
+    montant REAL,
+    objet TEXT,
+    date TEXT
+)
+""")
+conn.commit()
+
+# Charger les données
 df = pd.read_sql("SELECT * FROM factures ORDER BY date DESC", conn)
 
 # -------------------------------
@@ -112,3 +133,49 @@ if not df.empty:
     st.line_chart(evolution)
     st.write("### 📊 Analyse mensuelle")
     st.dataframe(evolution, use_container_width=True)
+
+# -------------------------------
+# CRUD - Gestion de la base
+# -------------------------------
+st.subheader("⚙️ Gestion de la base (Admin uniquement)")
+
+# Initialiser la base
+if st.button("🆕 Initialiser la base"):
+    cursor.execute("DROP TABLE IF EXISTS factures")
+    cursor.execute("""
+    CREATE TABLE factures (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT,
+        client TEXT,
+        montant REAL,
+        objet TEXT,
+        date TEXT
+    )
+    """)
+    conn.commit()
+    st.success("✅ Base initialisée")
+
+# Vider toutes les factures
+if st.button("🗑️ Vider toutes les factures"):
+    cursor.execute("DELETE FROM factures")
+    conn.commit()
+    st.warning("⚠️ Toutes les factures ont été supprimées")
+
+# Supprimer une facture spécifique
+facture_id = st.number_input("ID de la facture à supprimer", min_value=1, step=1)
+if st.button("❌ Supprimer cette facture"):
+    cursor.execute("DELETE FROM factures WHERE id = ?", (facture_id,))
+    conn.commit()
+    st.info(f"Facture ID {facture_id} supprimée")
+
+# Modifier une facture
+st.subheader("✏️ Modifier une facture")
+edit_id = st.number_input("ID de la facture à modifier", min_value=1, step=1, key="edit_id")
+new_client = st.text_input("Nouveau nom du client")
+new_montant = st.number_input("Nouveau montant", min_value=0.0)
+
+if st.button("💾 Mettre à jour"):
+    cursor.execute("UPDATE factures SET client=?, montant=? WHERE id=?", (new_client, new_montant, edit_id))
+    conn.commit()
+    st.success(f"Facture ID {edit_id} mise à jour")
+conn.close()
