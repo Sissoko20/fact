@@ -107,6 +107,8 @@ st.markdown(html_preview, unsafe_allow_html=True)
 # -------------------------------
 # GÉNÉRATION PDF + SAUVEGARDE
 # -------------------------------
+from firebase_admin import firestore
+from firebase_admin_setup import db   # ton module qui initialise Firebase
 
 if st.button("📄 Générer PDF"):
     filename = generate_pdf(html_preview, "document.pdf")
