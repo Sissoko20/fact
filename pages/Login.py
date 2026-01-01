@@ -4,10 +4,12 @@ import os
 SESSION_FILE = "data/session.txt"
 
 def save_session(role):
+    """Sauvegarde la session dans un fichier local"""
     with open(SESSION_FILE, "w") as f:
         f.write(f"authenticated|{role}")
 
 def load_session():
+    """Recharge la session depuis le fichier local"""
     if os.path.exists(SESSION_FILE):
         with open(SESSION_FILE) as f:
             content = f.read().strip().split("|")
@@ -20,6 +22,7 @@ def load_session():
         st.session_state["authenticated"] = False
 
 def clear_session():
+    """Supprime la session"""
     if os.path.exists(SESSION_FILE):
         os.remove(SESSION_FILE)
     st.session_state["authenticated"] = False
