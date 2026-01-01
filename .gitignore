@@ -32,5 +32,4 @@ build/
 dist/
 *.egg-info/
 
-# --- Streamlit ---
-.streamlit/
+

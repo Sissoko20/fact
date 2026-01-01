@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_option_menu import option_menu
 
 # -------------------------------
 # Configuration de la page
@@ -12,46 +13,63 @@ if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
 if not st.session_state["authenticated"]:
-    st.switch_page("pages/Login.py")   # 👈 Login à la racine
+    st.warning("⚠️ Veuillez vous connecter d'abord.")
     st.stop()
 
 # -------------------------------
-# Sidebar personnalisée
+# Barre de navigation moderne
 # -------------------------------
-st.sidebar.image("assets/logo.png", width=100)
-st.sidebar.markdown("### 📂 Navigation")
-st.sidebar.page_link("app.py", label="🏠 Tableau de bord", icon="📊")   # 👈 fichier principal
-st.sidebar.page_link("pages/Previsualisation.py", label="🧾 Créer une facture / reçu")
-st.sidebar.page_link("pages/Admin.py", label="👥 Gestion des utilisateurs")
+with st.sidebar:
+    st.image("assets/logo.png", width=120)
+    selected = option_menu(
+        "Navigation",
+        ["🏠 Tableau de bord", "🧾 Factures", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
+        icons=["house", "file-text", "cash", "people", "box-arrow-right"],
+        menu_icon="cast",
+        default_index=0,
+    )
 
+# -------------------------------
+# Logique de navigation
+# -------------------------------
+if selected == "🏠 Tableau de bord":
+    st.image("assets/logo.png", width=150)
+    st.title("Bienvenue sur MABOU-INSTRUMED Facturation")
 
-if st.sidebar.button("🔒 Déconnexion"):
+    st.subheader("⚙️ Actions rapides")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown("### 🧾 Créer une facture")
+        if st.button("➕ Nouvelle Facture"):
+            selected = "🧾 Factures"
+
+    with col2:
+        st.markdown("### 💰 Créer un reçu")
+        if st.button("➕ Nouveau Reçu"):
+            selected = "💰 Reçus"
+
+    with col3:
+        st.markdown("### 👥 Gestion des utilisateurs")
+        if st.button("🔑 Gérer les utilisateurs"):
+            selected = "👥 Utilisateurs"
+
+    st.markdown("---")
+    st.caption("© 2025 MABOU-INSTRUMED - Système de gestion des factures et reçus médicaux")
+
+elif selected == "🧾 Factures":
+    st.title("Créer une facture")
+    st.write("👉 Ici tu mets ton formulaire de facturation.")
+
+elif selected == "💰 Reçus":
+    st.title("Créer un reçu")
+    st.write("👉 Ici tu mets ton formulaire de reçu.")
+
+elif selected == "👥 Utilisateurs":
+    st.title("Gestion des utilisateurs")
+    st.write("👉 Ici tu mets ton interface Admin.")
+
+elif selected == "🔒 Déconnexion":
     st.session_state["authenticated"] = False
-    st.switch_page("pages/Login.py")   # 👈 Login à la racine
-
-# -------------------------------
-# Contenu principal
-# -------------------------------
-st.image("assets/logo.png", width=150)
-st.title("Bienvenue sur MABOU-INSTRUMED Facturation")
-
-st.subheader("⚙️ Actions rapides")
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    st.markdown("### 🧾 Créer une facture")
-    if st.button("➕ Nouvelle Facture"):
-        st.switch_page("pages/Previsualisation.py")
-
-with col2:
-    st.markdown("### 💰 Créer un reçu")
-    if st.button("➕ Nouveau Reçu"):
-        st.switch_page("pages/Previsualisation.py")
-
-with col3:
-    st.markdown("### 👥 Gestion des utilisateurs")
-    if st.button("🔑 Gérer les utilisateurs"):
-        st.switch_page("pages/Admin.py")
-
-st.markdown("---")
-st.caption("© 2025 MABOU-INSTRUMED - Système de gestion des factures et reçus médicaux")
+    st.info("✅ Déconnecté")
+    st.stop()
