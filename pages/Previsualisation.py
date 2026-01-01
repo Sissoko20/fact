@@ -1,12 +1,54 @@
 import streamlit as st
 import sqlite3
 from datetime import datetime
+from streamlit_option_menu import option_menu
 from components.pdf_generator import generate_pdf, build_facture_html
+from firebase_admin_setup import db   # ton module qui initialise Firebase
 
+# -------------------------------
+# Vérification d'authentification
+# -------------------------------
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
 
+if not st.session_state["authenticated"]:
+    st.warning("⚠️ Veuillez vous connecter d'abord.")
+    st.switch_page("pages/Login.py")
+    st.stop()
 
+# -------------------------------
+# Barre de navigation moderne
+# -------------------------------
+with st.sidebar:
+    st.image("assets/logo.png", width=120)
+    selected = option_menu(
+        "Navigation",
+        ["🏠 Tableau de bord", "🧾 Factures", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
+        icons=["house", "file-text", "cash", "people", "box-arrow-right"],
+        menu_icon="cast",
+        default_index=1,  # 👉 ici on met Factures/Reçus comme actif
+    )
 
-# Connexion et initialisation DB
+# -------------------------------
+# Redirections via menu
+# -------------------------------
+if selected == "🏠 Tableau de bord":
+    st.switch_page("app.py")
+elif selected == "👥 Utilisateurs":
+    st.switch_page("pages/Admin.py")
+elif selected == "🔒 Déconnexion":
+    st.session_state["authenticated"] = False
+    st.info("✅ Déconnecté")
+    st.switch_page("pages/Login.py")
+
+# -------------------------------
+# Contenu principal : Prévisualisation
+# -------------------------------
+st.title("📝 Prévisualisation")
+
+modele = st.selectbox("Choisissez un modèle", ["Facture Professionnelle", "Reçu de Paiement"])
+
+# Connexion DB
 conn = sqlite3.connect("data/factures.db")
 cursor = conn.cursor()
 cursor.execute("""
@@ -21,12 +63,8 @@ CREATE TABLE IF NOT EXISTS factures (
 """)
 conn.commit()
 
-st.title("📝 Prévisualisation")
-
-modele = st.selectbox("Choisissez un modèle", ["Facture Professionnelle", "Reçu de Paiement"])
-
 # -------------------------------
-# FACTURE PROFESSIONNELLE
+# Facture
 # -------------------------------
 if modele == "Facture Professionnelle":
     client_name = st.text_input("Nom du client")
@@ -34,7 +72,6 @@ if modele == "Facture Professionnelle":
     client_email = st.text_input("Email du client")
 
     st.markdown("### 🧾 Lignes de facture")
-
     if "facture_items" not in st.session_state:
         st.session_state.facture_items = []
 
@@ -68,18 +105,12 @@ if modele == "Facture Professionnelle":
             "tva": 18 if tva else 0
         })
 
-    data = {
-        "client_name": client_name,
-        "client_phone": client_phone,
-        "client_email": client_email,
-        "items": items
-    }
-
+    data = {"client_name": client_name, "client_phone": client_phone, "client_email": client_email, "items": items}
     html_preview = build_facture_html(data, type_doc="Facture Professionnelle")
     montant = sum(item["qty"] * item["price"] for item in items)
 
 # -------------------------------
-# REÇU DE PAIEMENT
+# Reçu
 # -------------------------------
 else:
     client_name = st.text_input("Nom du client")
@@ -88,34 +119,21 @@ else:
     amount = st.number_input("Montant payé (FCFA)", min_value=0, value=0)
     objet = st.text_input("Objet du paiement", "Paiement de services médicaux")
 
-    data = {
-        "client_name": client_name,
-        "client_phone": client_phone,
-        "client_email": client_email,
-        "amount": amount,
-        "objet": objet
-    }
+    data = {"client_name": client_name, "client_phone": client_phone, "client_email": client_email,
+            "amount": amount, "objet": objet}
     html_preview = build_facture_html(data, type_doc="Reçu de Paiement")
     montant = amount
 
 # -------------------------------
-# PRÉVISUALISATION
+# Aperçu + PDF
 # -------------------------------
 st.markdown("### 🔎 Aperçu")
 st.markdown(html_preview, unsafe_allow_html=True)
-
-# -------------------------------
-# GÉNÉRATION PDF + SAUVEGARDE
-# -------------------------------
-from firebase_admin import firestore
-from firebase_admin_setup import db   # ton module qui initialise Firebase
 
 if st.button("📄 Générer PDF"):
     filename = generate_pdf(html_preview, "document.pdf")
     if filename:
         st.success("✅ PDF généré avec succès")
-
-        # --- Sauvegarde dans Firestore ---
         facture_doc = {
             "type": modele,
             "client_name": data["client_name"],
@@ -128,14 +146,8 @@ if st.button("📄 Générer PDF"):
         }
         db.collection("factures").add(facture_doc)
         st.success("💾 Facture enregistrée dans Firestore")
-
-        # --- Téléchargement PDF ---
         with open(filename, "rb") as f:
-            st.download_button(
-                label="⬇️ Télécharger le PDF",
-                data=f,
-                file_name=filename,
-                mime="application/pdf"
-            )
+            st.download_button("⬇️ Télécharger le PDF", f, file_name=filename, mime="application/pdf")
     else:
         st.error("❌ Erreur lors de la génération du PDF")
+conn.close()
