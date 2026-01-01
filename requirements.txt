@@ -29,3 +29,4 @@ cairocffi
 cffi
 streamlit_pdf
 matplotlib
+streamlit_option_menu
