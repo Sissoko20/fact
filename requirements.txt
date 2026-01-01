@@ -1,24 +1,21 @@
-# Core Streamlit
+# Core
 streamlit
 
-# PDF HTML -> PDF (cloud safe)
+# PDF/HTML to PDF (ensure cloud-safe)
 xhtml2pdf
 reportlab
-fpdf
 fpdf2
 Pillow
 jinja2
 python-dateutil
 
-# Data & visualisation (PINNÉ)
+# Data & Visualization
 pandas
-
 openpyxl
 
 # Firebase / Google
 firebase-admin
 pyrebase4
-pycryptodome
 pycryptodomex
 google-auth
 google-auth-oauthlib
@@ -26,6 +23,4 @@ google-cloud-firestore
 google-cloud-storage
 
 # Utils
-requests
-setuptools
-wheel
+requests   
