@@ -1,37 +1,59 @@
 import streamlit as st
-from firebase_utils import get_user_role
+import os
 
-st.set_page_config(page_title="Connexion", layout="wide")
+SESSION_FILE = "data/session.txt"
 
-# Initialiser l'état de session
-if "authenticated" not in st.session_state:
+def save_session(role):
+    with open(SESSION_FILE, "w") as f:
+        f.write(f"authenticated|{role}")
+
+def load_session():
+    if os.path.exists(SESSION_FILE):
+        with open(SESSION_FILE) as f:
+            content = f.read().strip().split("|")
+            if len(content) == 2 and content[0] == "authenticated":
+                st.session_state["authenticated"] = True
+                st.session_state["role"] = content[1]
+            else:
+                st.session_state["authenticated"] = False
+    else:
+        st.session_state["authenticated"] = False
+
+def clear_session():
+    if os.path.exists(SESSION_FILE):
+        os.remove(SESSION_FILE)
     st.session_state["authenticated"] = False
     st.session_state["role"] = None
-    st.session_state["email"] = None
 
-# Si déjà connecté → redirection
-if st.session_state["authenticated"]:
-    st.switch_page("app.py")
-    st.stop()
+# -------------------------------
+# Initialisation session
+# -------------------------------
+if "authenticated" not in st.session_state:
+    load_session()
 
-st.title("🔑 Connexion")
+if st.session_state.get("authenticated", False):
+    st.success(f"✅ Déjà connecté en tant que {st.session_state['role']}")
+    if st.button("🔒 Déconnexion"):
+        clear_session()
+        st.rerun()
+else:
+    st.title("🔑 Connexion")
+    username = st.text_input("Nom d'utilisateur")
+    password = st.text_input("Mot de passe", type="password")
 
-with st.form("login_form"):
-    email = st.text_input("Email")
-    password = st.text_input("Mot de passe", type="password")  # champ placeholder
-    submit = st.form_submit_button("Se connecter")
-
-    if submit:
-        role = get_user_role(email)  # 🔥 récupère le rôle depuis Firestore
-        if role:
+    if st.button("Se connecter"):
+        # Exemple simple : admin / user
+        if username == "admin" and password == "admin123":
+            save_session("admin")
             st.session_state["authenticated"] = True
-            st.session_state["role"] = role
-            st.session_state["email"] = email
-            st.success(f"✅ Connecté en tant que {role}")
-            st.switch_page("app.py")
+            st.session_state["role"] = "admin"
+            st.success("✅ Connecté comme administrateur")
+            st.rerun()
+        elif username == "user" and password == "user123":
+            save_session("user")
+            st.session_state["authenticated"] = True
+            st.session_state["role"] = "user"
+            st.success("✅ Connecté comme utilisateur")
+            st.rerun()
         else:
-            st.error("❌ Utilisateur introuvable ou rôle non défini")
-
-# 👉 Bouton pour créer un compte
-if st.button("🧾 Créer un compte"):
-    st.switch_page("pages/Admin.py")
+            st.error("❌ Identifiants invalides")
