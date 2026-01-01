@@ -1,5 +1,7 @@
+import streamlit as st
 from xhtml2pdf import pisa
 from datetime import datetime
+from streamlit_pdf import pdf_viewer   # composant pour prévisualiser le PDF
 
 def generate_pdf(html_content, filename="document.pdf"):
     with open(filename, "wb") as f:
@@ -13,7 +15,6 @@ def build_facture_html(data, type_doc="Facture"):
     signature_path = "assets/signature.png"
     today = datetime.today().strftime("%d/%m/%Y")
 
-    # Style CSS minimal
     css_style = """
     <style>
         body { font-family: Arial, sans-serif; font-size: 13px; line-height: 1.3; }
@@ -33,7 +34,6 @@ def build_facture_html(data, type_doc="Facture"):
     </div>
     """
 
-    # ---------------- FACTURE ----------------
     if type_doc == "Facture Professionnelle":
         items_html = ""
         total_ht = 0
@@ -58,7 +58,6 @@ def build_facture_html(data, type_doc="Facture"):
         html = f"""
         {css_style}
         <div style="width:650px; padding:10px;">
-            <!-- En-tête -->
             <div style="display:flex; justify-content:space-between;">
                 <div>
                     <img src="{logo_path}" width="70"><br>
@@ -105,12 +104,10 @@ def build_facture_html(data, type_doc="Facture"):
         """
         return html
 
-    # ---------------- REÇU ----------------
     elif type_doc == "Reçu de Paiement":
         html = f"""
         {css_style}
         <div style="width:650px; padding:10px;">
-            <!-- En-tête -->
             <div style="display:flex; justify-content:space-between;">
                 <div>
                     <img src="{logo_path}" width="70"><br>
@@ -144,3 +141,32 @@ def build_facture_html(data, type_doc="Facture"):
         </div>
         """
         return html
+
+# ---------------- Exemple Streamlit ----------------
+st.title("📄 Générateur de Facture / Reçu")
+
+data = {
+    "client_name": "Client Test",
+    "client_phone": "70 00 00 00",
+    "client_email": "client@example.com",
+    "items": [
+        {"description": "Consultation médicale", "date": "31/12/2025", "qty": 1, "price": 50000, "tva": 18},
+        {"description": "Analyse laboratoire", "date": "31/12/2025", "qty": 2, "price": 15000, "tva": 18},
+    ],
+    "objet": "Paiement consultation",
+    "amount": 80000
+}
+
+doc_type = st.selectbox("Choisir le type de document", ["Facture Professionnelle", "Reçu de Paiement"])
+html_content = build_facture_html(data, type_doc=doc_type)
+pdf_file = generate_pdf(html_content, filename="document.pdf")
+
+# Prévisualisation du PDF
+if pdf_file:
+    pdf_viewer(pdf_file)
+
+    # Bouton de téléchargement
+    with open(pdf_file, "rb") as f:
+        st.download_button("📥 Télécharger le document", f, file_name=pdf_file, mime="application/pdf")
+else:
+    st.error("Erreur lors de la génération du PDF")
