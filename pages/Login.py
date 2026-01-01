@@ -1,14 +1,14 @@
 import streamlit as st
-from firebase_utils import get_user_role  # ta fonction qui lit Firestore
+from firebase_utils import get_user_role  # ta fonction Firestore
 
 st.set_page_config(page_title="Connexion", layout="wide")
 
 # Vérifier si déjà connecté via query params
-params = st.experimental_get_query_params()
-if "auth" in params and params["auth"][0] == "true":
+params = st.query_params
+if "auth" in params and params["auth"] == "true":
     st.session_state["authenticated"] = True
-    st.session_state["role"] = params.get("role", ["user"])[0]
-    st.session_state["email"] = params.get("email", [""])[0]
+    st.session_state["role"] = params.get("role", "user")
+    st.session_state["email"] = params.get("email", "")
     st.switch_page("app.py")
     st.stop()
 
@@ -33,13 +33,14 @@ with st.form("login_form"):
             st.session_state["email"] = email
 
             # Sauvegarde dans l'URL (query params)
-            st.experimental_set_query_params(auth="true", role=role, email=email)
+            st.query_params["auth"] = "true"
+            st.query_params["role"] = role
+            st.query_params["email"] = email
 
             st.success(f"✅ Connecté en tant que {role}")
             st.switch_page("app.py")
         else:
             st.error("❌ Utilisateur introuvable ou rôle non défini")
 
-# 👉 Bouton pour créer un compte
 if st.button("🧾 Créer un compte"):
     st.switch_page("pages/Admin.py")

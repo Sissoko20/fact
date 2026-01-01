@@ -3,11 +3,11 @@ import streamlit as st
 st.set_page_config(page_title="Tableau de bord", page_icon="📊", layout="wide")
 
 # Vérifier session via query params
-params = st.experimental_get_query_params()
-if "auth" in params and params["auth"][0] == "true":
+params = st.query_params
+if "auth" in params and params["auth"] == "true":
     st.session_state["authenticated"] = True
-    st.session_state["role"] = params.get("role", ["user"])[0]
-    st.session_state["email"] = params.get("email", [""])[0]
+    st.session_state["role"] = params.get("role", "user")
+    st.session_state["email"] = params.get("email", "")
 else:
     st.session_state["authenticated"] = False
     st.switch_page("pages/Login.py")
@@ -26,7 +26,7 @@ st.sidebar.markdown(f"👤 Connecté : {st.session_state['email']} ({st.session_
 
 if st.sidebar.button("🔒 Déconnexion"):
     # Supprimer les query params
-    st.experimental_set_query_params()
+    st.query_params.clear()
     st.session_state["authenticated"] = False
     st.session_state["role"] = None
     st.session_state["email"] = None
