@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-import sqlite3
 import matplotlib.pyplot as plt
+from firebase_admin_setup import db   # ton module qui initialise Firebase
 
 # -------------------------------
 # Configuration de la page
@@ -17,24 +17,16 @@ if "role" not in st.session_state or st.session_state["role"] != "admin":
     st.stop()
 
 # -------------------------------
-# Connexion DB + Initialisation
+# Charger les données Firestore
 # -------------------------------
-conn = sqlite3.connect("data/factures.db")
-cursor = conn.cursor()
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS factures (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    type TEXT,
-    client TEXT,
-    montant REAL,
-    objet TEXT,
-    date TEXT
-)
-""")
-conn.commit()
+factures_ref = db.collection("factures").stream()
+rows = []
+for doc in factures_ref:
+    d = doc.to_dict()
+    d["id"] = doc.id  # garder l’ID Firestore pour suppression/modif
+    rows.append(d)
 
-# Charger les données
-df = pd.read_sql("SELECT * FROM factures ORDER BY date DESC", conn)
+df = pd.DataFrame(rows)
 
 # -------------------------------
 # Aperçu global
@@ -93,7 +85,7 @@ if not df.empty:
 # -------------------------------
 st.subheader("⚖️ Comparaison Factures vs Reçus")
 
-if not df.empty:
+if not df.empty and "date" in df.columns:
     df["date"] = pd.to_datetime(df["date"])
     min_date, max_date = df["date"].min(), df["date"].max()
     start_date = st.date_input("Date de début", min_date)
@@ -124,7 +116,7 @@ if not df.empty:
 # -------------------------------
 st.subheader("📅 Évolution mensuelle")
 
-if not df.empty:
+if not df.empty and "date" in df.columns:
     df["date"] = pd.to_datetime(df["date"])
     df["mois"] = df["date"].dt.to_period("M").astype(str)
 
@@ -135,50 +127,21 @@ if not df.empty:
     st.dataframe(evolution, use_container_width=True)
 
 # -------------------------------
-# CRUD - Gestion de la base
+# CRUD - Gestion Firestore
 # -------------------------------
 st.subheader("⚙️ Gestion de la base (Admin uniquement)")
 
-# Initialiser la base
-if st.button("🆕 Initialiser la base"):
-    cursor.execute("DROP TABLE IF EXISTS factures")
-    cursor.execute("""
-    CREATE TABLE factures (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        type TEXT,
-        client TEXT,
-        montant REAL,
-        objet TEXT,
-        date TEXT
-    )
-    """)
-    conn.commit()
-    st.success("✅ Base initialisée")
-    st.rerun()    # 👈 relance après action
+# Supprimer une facture spécifique
+facture_id = st.text_input("ID Firestore de la facture à supprimer")
+if st.button("❌ Supprimer cette facture"):
+    if facture_id:
+        db.collection("factures").document(facture_id).delete()
+        st.success(f"Facture {facture_id} supprimée")
+        st.rerun()
 
 # Vider toutes les factures
 if st.button("🗑️ Vider toutes les factures"):
-    cursor.execute("DELETE FROM factures")
-    conn.commit()
+    for doc in db.collection("factures").stream():
+        db.collection("factures").document(doc.id).delete()
     st.warning("⚠️ Toutes les factures ont été supprimées")
-    st.rerun()    # 👈 relance après action
-
-# Supprimer une facture spécifique
-facture_id = st.number_input("ID de la facture à supprimer", min_value=1, step=1)
-if st.button("❌ Supprimer cette facture"):
-    cursor.execute("DELETE FROM factures WHERE id = ?", (facture_id,))
-    conn.commit()
-    st.info(f"Facture ID {facture_id} supprimée")
-    st.rerun()    # 👈 relance après action
-
-# Modifier une facture
-st.subheader("✏️ Modifier une facture")
-edit_id = st.number_input("ID de la facture à modifier", min_value=1, step=1, key="edit_id")
-new_client = st.text_input("Nouveau nom du client")
-new_montant = st.number_input("Nouveau montant", min_value=0.0)
-
-if st.button("💾 Mettre à jour"):
-    cursor.execute("UPDATE factures SET client=?, montant=? WHERE id=?", (new_client, new_montant, edit_id))
-    conn.commit()
-    st.success(f"Facture ID {edit_id} mise à jour")
-    st.rerun()   # 👈 relance après action
+    st.rerun()
