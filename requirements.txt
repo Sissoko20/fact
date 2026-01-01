@@ -27,3 +27,4 @@ requests
 
 cairocffi
 cffi
+streamlit_pdf
