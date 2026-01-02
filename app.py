@@ -24,7 +24,7 @@ with st.sidebar:
     st.image("assets/logo.png", width=120)
     selected = option_menu(
         "Navigation",
-        ["🏠 Tableau de bord", "🧾 Factures", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
+        ["🏠 Tableau de bord","Analyse de donnees", "🧾 Factures", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
         icons=["house", "file-text", "cash", "people", "box-arrow-right"],
         menu_icon="cast",
         default_index=0,
