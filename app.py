@@ -14,7 +14,7 @@ if "authenticated" not in st.session_state:
 
 if not st.session_state["authenticated"]:
     st.warning("⚠️ Veuillez vous connecter d'abord.")
-    st.switch_page("pages/Login.py")  # fonctionne si Login.py existe dans pages/
+    st.switch_page("pages/Login.py")
     st.stop()
 
 # -------------------------------
@@ -24,15 +24,12 @@ with st.sidebar:
     st.image("assets/logo.png", width=120)
     selected = option_menu(
         "Navigation",
-        ["🏠 Tableau de bord","Analyse de donnees", "🧾 Factures", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
-        icons=["house", "file-text", "cash", "people", "box-arrow-right"],
+        ["🏠 Tableau de bord", "Analyse de donnees", "🧾 Factures", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
+        icons=["house", "bar-chart", "file-text", "cash", "people", "box-arrow-right"],
         menu_icon="cast",
         default_index=0,
     )
 
-# -------------------------------
-# Logique de navigation
-# -------------------------------
 # -------------------------------
 # Logique de navigation
 # -------------------------------

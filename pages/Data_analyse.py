@@ -1,16 +1,57 @@
 import streamlit as st
 import pandas as pd
+from matplotlib import pyplot as plt
+from streamlit_option_menu import option_menu
 from firebase_admin_setup import db
 
+# -------------------------------
+# Configuration
+# -------------------------------
+st.set_page_config(page_title="Analyse des données", page_icon="📊", layout="wide")
+
+# -------------------------------
 # Vérification session persistante
+# -------------------------------
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
     st.error("⛔ Vous devez être connecté")
     st.stop()
 
-if st.session_state["role"] != "admin":
+if st.session_state.get("role") != "admin":
     st.error("⛔ Accès réservé aux administrateurs")
     st.stop()
 
+# -------------------------------
+# Barre de navigation moderne
+# -------------------------------
+with st.sidebar:
+    st.image("assets/logo.png", width=120)
+    selected = option_menu(
+        "Navigation",
+        ["🏠 Tableau de bord", "Analyse de donnees", "🧾 Factures", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
+        icons=["house", "bar-chart", "file-text", "cash", "people", "box-arrow-right"],
+        menu_icon="cast",
+        default_index=1,  # 👉 active Analyse de donnees
+    )
+
+# -------------------------------
+# Logique de navigation
+# -------------------------------
+if selected == "🏠 Tableau de bord":
+    st.switch_page("app.py")
+elif selected == "🧾 Factures":
+    st.switch_page("pages/Previsualisation.py")
+elif selected == "💰 Reçus":
+    st.switch_page("pages/Previsualisation.py")
+elif selected == "👥 Utilisateurs":
+    st.switch_page("pages/Admin.py")
+elif selected == "🔒 Déconnexion":
+    st.session_state["authenticated"] = False
+    st.info("✅ Déconnecté")
+    st.switch_page("pages/Login.py")
+
+# -------------------------------
+# Contenu principal : Dashboard
+# -------------------------------
 st.title("📊 Dashboard - Analyse des factures")
 
 # Charger les factures Firestore
@@ -20,13 +61,10 @@ df = pd.DataFrame(rows)
 
 st.dataframe(df)
 
-# -------------------------------
 # Aperçu global
-# -------------------------------
 st.subheader("📊 Aperçu global")
-
 if not df.empty:
-    total_factures = df[df["type"] == "Facture Professionnelle"]["montant"].sum()
+    total_factures = df[df["type"] == "Facture de doit"]["montant"].sum()
     total_recus = df[df["type"] == "Reçu de Paiement"]["montant"].sum()
     total_global = df["montant"].sum()
     nb_docs = len(df)
@@ -39,9 +77,7 @@ if not df.empty:
 else:
     st.info("Aucune donnée disponible.")
 
-# -------------------------------
 # Historique
-# -------------------------------
 st.subheader("📑 Historique")
 if not df.empty:
     type_filtre = st.selectbox("Filtrer par type :", ["Tous"] + df["type"].unique().tolist())
@@ -51,9 +87,7 @@ if not df.empty:
 else:
     st.warning("Aucun historique disponible.")
 
-# -------------------------------
-# Visualisations interactives
-# -------------------------------
+# Visualisations
 st.subheader("📈 Visualisations")
 if not df.empty:
     chart_type = st.selectbox("Type de graphique :", ["Barres", "Camembert", "Courbe", "Histogramme"])
@@ -72,11 +106,8 @@ if not df.empty:
             df[col_y].plot(kind="hist", ax=ax, bins=10)
         st.pyplot(fig)
 
-# -------------------------------
 # Comparaison Factures vs Reçus
-# -------------------------------
 st.subheader("⚖️ Comparaison Factures vs Reçus")
-
 if not df.empty and "date" in df.columns:
     df["date"] = pd.to_datetime(df["date"])
     min_date, max_date = df["date"].min(), df["date"].max()
@@ -87,7 +118,6 @@ if not df.empty and "date" in df.columns:
 
     if not df_periode.empty:
         comparaison = df_periode.groupby("type")["montant"].sum()
-
         col1, col2 = st.columns(2)
         with col1:
             st.bar_chart(comparaison)
@@ -96,34 +126,20 @@ if not df.empty and "date" in df.columns:
             comparaison.plot.pie(autopct='%1.1f%%', ax=ax)
             ax.set_ylabel("")
             st.pyplot(fig)
-
-        st.write("### 📊 Analyse rapide")
-        for t, v in comparaison.items():
-            st.write(f"**{t} :** {v:,.0f} FCFA")
     else:
         st.warning("Aucune donnée dans cette période.")
 
-# -------------------------------
-# Évolution mensuelle
-# -------------------------------
+# Evolution mensuelle
 st.subheader("📅 Évolution mensuelle")
-
 if not df.empty and "date" in df.columns:
     df["date"] = pd.to_datetime(df["date"])
     df["mois"] = df["date"].dt.to_period("M").astype(str)
-
     evolution = df.groupby(["mois", "type"])["montant"].sum().unstack().fillna(0)
-
     st.line_chart(evolution)
-    st.write("### 📊 Analyse mensuelle")
     st.dataframe(evolution, use_container_width=True)
 
-# -------------------------------
-# CRUD - Gestion Firestore
-# -------------------------------
+# CRUD
 st.subheader("⚙️ Gestion de la base (Admin uniquement)")
-
-# Supprimer une facture spécifique
 facture_id = st.text_input("ID Firestore de la facture à supprimer")
 if st.button("❌ Supprimer cette facture"):
     if facture_id:
@@ -131,7 +147,6 @@ if st.button("❌ Supprimer cette facture"):
         st.success(f"Facture {facture_id} supprimée")
         st.rerun()
 
-# Vider toutes les factures
 if st.button("🗑️ Vider toutes les factures"):
     for doc in db.collection("factures").stream():
         db.collection("factures").document(doc.id).delete()
