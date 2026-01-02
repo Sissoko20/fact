@@ -71,7 +71,7 @@ elif selected == "🧾 Factures":
 elif selected == "💰 Reçus":
     st.switch_page("pages/Previsualisation.py")
 
-elif selected == "👥 Data_analys":
+elif selected == "👥 Data_analyse":
     st.switch_page("pages/Data_analyse.py")
     
 elif selected == "👥 Utilisateurs":
