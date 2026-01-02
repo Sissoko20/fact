@@ -33,13 +33,15 @@ with st.sidebar:
 # -------------------------------
 # Logique de navigation
 # -------------------------------
+# -------------------------------
+# Logique de navigation
+# -------------------------------
 if selected == "🏠 Tableau de bord":
-    # Pas besoin de switch_page ici, tu es déjà dans app.py
     st.image("assets/logo.png", width=150)
     st.title("Bienvenue sur MABOU-INSTRUMED Facturation")
 
     st.subheader("⚙️ Actions rapides")
-    col1, col2, col3,col4 = st.columns(4)
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.markdown("### 🧾 Créer une facture")
@@ -56,14 +58,16 @@ if selected == "🏠 Tableau de bord":
         if st.button("🔑 Gérer les utilisateurs"):
             st.switch_page("pages/Admin.py")
 
-
     with col4:
-        st.markdown("### 👥 Analyse mes donnees")
-        if st.button("🔑 Data_analyse"):
+        st.markdown("### 📊 Analyse des données")
+        if st.button("🔑 Data Analyse"):
             st.switch_page("pages/Data_analyse.py")
 
     st.markdown("---")
     st.caption("© 2025 MABOU-INSTRUMED - Système de gestion des factures et reçus médicaux")
+
+elif selected == "Analyse de donnees":
+    st.switch_page("pages/Data_analyse.py")
 
 elif selected == "🧾 Factures":
     st.switch_page("pages/Previsualisation.py")
@@ -71,12 +75,8 @@ elif selected == "🧾 Factures":
 elif selected == "💰 Reçus":
     st.switch_page("pages/Previsualisation.py")
 
-elif selected == "👥 Data_analyse":
-    st.switch_page("pages/Data_analyse.py")
-    
 elif selected == "👥 Utilisateurs":
     st.switch_page("pages/Admin.py")
-
 
 elif selected == "🔒 Déconnexion":
     st.session_state["authenticated"] = False
