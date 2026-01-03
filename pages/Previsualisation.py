@@ -153,47 +153,38 @@ if st.button("📄 Générer PDF"):
             st.download_button("⬇️ Télécharger le PDF", f, file_name=filename, mime="application/pdf")
 
         # Bouton Imprimer
-        st.markdown(
-            """
-            <button onclick="window.print()" 
-                    style="background-color:#2E86C1;color:white;padding:10px;border:none;border-radius:5px;cursor:pointer;">
-                🖨️ Imprimer la facture
-            </button>
-            """,
-            unsafe_allow_html=True
-        )
+st.markdown(f"[🖨️ Imprimer la facture](document.pdf)", unsafe_allow_html=True)
+
 
         # Bouton Envoyer par SMTP
-        if st.button("📧 Envoyer par email (SMTP)"):
-            subject = f"{modele} - {data['client_name']}"
-            body = f"Bonjour {data['client_name']},\n\nVeuillez trouver ci-joint votre {modele}.\nMontant : {montant} FCFA.\n\nCordialement,\nMABOU-INSTRUMED"
+if st.button("📧 Envoyer par email (SMTP)"):
+    subject = f"{modele} - {data['client_name']}"
+    body = f"Bonjour {data['client_name']},\n\nVeuillez trouver ci-joint votre {modele}.\nMontant : {montant} FCFA.\n\nCordialement,\nMABOU-INSTRUMED"
 
-            try:
-                sender = "ton_email@gmail.com"
-                password = "ton_mot_de_passe_app"  # ⚠️ utilise un mot de passe d’application
-                recipient = data["client_email"]
+    try:
+        sender = "ton_email@gmail.com"
+        password = "ton_mot_de_passe_app"  # mot de passe d’application Gmail
+        recipient = data["client_email"]
 
-                msg = MIMEMultipart()
-                msg['From'] = sender
-                msg['To'] = recipient
-                msg['Subject'] = subject
-                msg.attach(MIMEText(body, 'plain'))
+        msg = MIMEMultipart()
+        msg['From'] = sender
+        msg['To'] = recipient
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
 
-                with open(filename, "rb") as f:
-                    attach = MIMEApplication(f.read(), _subtype="pdf")
-                    attach.add_header('Content-Disposition', 'attachment', filename=filename)
-                    msg.attach(attach)
+        with open(filename, "rb") as f:
+            attach = MIMEApplication(f.read(), _subtype="pdf")
+            attach.add_header('Content-Disposition', 'attachment', filename=filename)
+            msg.attach(attach)
 
-                server = smtplib.SMTP("smtp.gmail.com", 587)
-                server.starttls()
-                server.login(sender, password)
-                server.send_message(msg)
-                server.quit()
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(sender, password)
+        server.send_message(msg)
+        server.quit()
 
-                st.success("✅ Email envoyé avec succès")
-            except Exception as e:
-                st.error(f"❌ Erreur envoi email : {e}")
-    else:
-        st.error("❌ Erreur lors de la génération du PDF")
+        st.success("✅ Email envoyé avec succès")
+    except Exception as e:
+        st.error(f"❌ Erreur envoi email : {e}")
 
 conn.close()
