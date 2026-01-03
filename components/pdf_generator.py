@@ -1,6 +1,9 @@
 from xhtml2pdf import pisa
 from datetime import datetime
 
+def format_number(n):
+    return f"{n:,.0f}".replace(",", ".")
+
 def generate_pdf(html_content, filename="document.pdf"):
     with open(filename, "wb") as f:
         pisa_status = pisa.CreatePDF(html_content, dest=f)
@@ -13,7 +16,6 @@ def build_facture_html(data, type_doc="Facture"):
     signature_path = "assets/signature.png"
     today = datetime.today().strftime("%d/%m/%Y")
 
-    # Style CSS minimal
     css_style = """
     <style>
         body { font-family: Arial, sans-serif; font-size: 13px; line-height: 1.3; }
@@ -21,12 +23,13 @@ def build_facture_html(data, type_doc="Facture"):
         table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
         th { background-color: #f2f2f2; border: 1px solid #999; padding: 4px; text-align: center; }
         td { border: 1px solid #999; padding: 4px; }
+        td.desc { max-width: 250px; word-wrap: break-word; }
         .footer { font-size: 11px; text-align: center; color: #555; margin-top: 20px; }
         .signature { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 20px; }
     </style>
     """
 
-    footer_text = f"""
+    footer_text = """
     <div class="footer">
     MABOU-INSTRUMED-SARL | RCCM : Ma.Bko.2023.M11004 | NIF : 084148985H | HAMDALLAYE ACI 2000  
     Tél : +223 74 56 43 95 | IMMEUBLE MOUSSA ARAMA | Email : sidibeyakouba@ymail.com
@@ -40,25 +43,23 @@ def build_facture_html(data, type_doc="Facture"):
         for item in data["items"]:
             montant = item["qty"] * item["price"]
             total_ht += montant
-            tva = item.get("tva", 0)
             items_html += f"""
             <tr>
-                <td>{item['description']}</td>
+                <td class="desc">{item['description']}</td>
                 <td style="text-align:center;">{item['date']}</td>
                 <td style="text-align:center;">{item['qty']}</td>
-                <td style="text-align:right;">{item['price']:.2f} FCFA</td>
-                <td style="text-align:center;">{tva}%</td>
-                <td style="text-align:right;">{montant:.2f} FCFA</td>
+                <td style="text-align:right;">{format_number(item['price'])} FCFA</td>
+                <td style="text-align:right;">{format_number(montant)} FCFA</td>
             </tr>
             """
 
-        tva_total = total_ht * 0.18
-        total_ttc = total_ht + tva_total
+        avance = data.get("avance", 0.0)
+        reliquat = data.get("reliquat", total_ht - avance)
+        objet = data.get("objet", "")
 
         html = f"""
         {css_style}
         <div style="width:650px; padding:10px;">
-            <!-- En-tête -->
             <div style="display:flex; justify-content:space-between;">
                 <div>
                     <img src="{logo_path}" width="70"><br>
@@ -79,10 +80,12 @@ def build_facture_html(data, type_doc="Facture"):
             <hr>
             <h3>FACTURE</h3>
 
+            <p><b>Objet :</b> {objet}</p>
+
             <table>
                 <thead>
                     <tr>
-                        <th>Description</th><th>Date</th><th>Qté</th><th>Prix unitaire</th><th>TVA</th><th>Montant</th>
+                        <th>Description</th><th>Date</th><th>Qté</th><th>Prix unitaire</th><th>Montant</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -90,9 +93,9 @@ def build_facture_html(data, type_doc="Facture"):
                 </tbody>
             </table>
 
-            <p><b>Total HT :</b> {total_ht:.2f} FCFA</p>
-            <p><b>TVA 18% :</b> {tva_total:.2f} FCFA</p>
-            <p><b>Total TTC :</b> {total_ttc:.2f} FCFA</p>
+            <p><b>Total :</b> {format_number(total_ht)} FCFA</p>
+            <p><b>Avance :</b> {format_number(avance)} FCFA</p>
+            <p><b>Reliquat :</b> {format_number(reliquat)} FCFA</p>
 
             <hr>
             <div class="signature">
@@ -110,7 +113,6 @@ def build_facture_html(data, type_doc="Facture"):
         html = f"""
         {css_style}
         <div style="width:650px; padding:10px;">
-            <!-- En-tête -->
             <div style="display:flex; justify-content:space-between;">
                 <div>
                     <img src="{logo_path}" width="70"><br>
@@ -132,7 +134,7 @@ def build_facture_html(data, type_doc="Facture"):
             <h3>REÇU DE PAIEMENT</h3>
 
             <p><b>Objet :</b> {data.get('objet','')}</p>
-            <p><b>Montant payé :</b> {data.get('amount',0):.2f} FCFA</p>
+            <p><b>Montant payé :</b> {format_number(data.get('amount',0))} FCFA</p>
 
             <hr>
             <div class="signature">

@@ -1,9 +1,9 @@
 import streamlit as st
 import sqlite3
-from datetime import datetime
+from datetime import datetime, date
 from streamlit_option_menu import option_menu
 from components.pdf_generator import generate_pdf, build_facture_html
-from firebase_admin_setup import db   # ton module qui initialise Firebase
+from firebase_admin_setup import db
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -30,7 +30,7 @@ with st.sidebar:
         ["🏠 Tableau de bord", "🧾 Facture de doit", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
         icons=["house", "file-text", "cash", "people", "box-arrow-right"],
         menu_icon="cast",
-        default_index=1,  # 👉 Facture de doit actif
+        default_index=1,
     )
 
 # -------------------------------
@@ -52,7 +52,7 @@ st.title("📝 Prévisualisation")
 
 modele = st.selectbox("Choisissez un modèle", ["Facture de doit", "Reçu de Paiement"])
 
-# Connexion DB
+# Connexion DB (facultatif si tu utilises Firestore)
 conn = sqlite3.connect("data/factures.db")
 cursor = conn.cursor()
 cursor.execute("""
@@ -66,6 +66,8 @@ CREATE TABLE IF NOT EXISTS factures (
 )
 """)
 conn.commit()
+
+filename = None  # pour gérer l'envoi par email après génération
 
 # -------------------------------
 # Facture de doit
@@ -82,36 +84,45 @@ if modele == "Facture de doit":
     if st.button("➕ Ajouter une ligne"):
         st.session_state.facture_items.append({
             "description": "",
-            "date": datetime.today().strftime("%d/%m/%Y"),
+            "date": date.today().strftime("%d/%m/%Y"),
             "qty": 1,
-            "price": 1000.0,
-            "tva": 18
+            "price": 1000.0
         })
 
     items = []
     for i, item in enumerate(st.session_state.facture_items):
         st.markdown(f"**Ligne {i+1}**")
-        description = st.text_input(f"Description {i+1}", value=item["description"], key=f"desc_{i}")
-        date = st.date_input(f"Date {i+1}", value=datetime.today(), key=f"date_{i}")
+        description = st.text_area(f"Description {i+1}", value=item["description"], key=f"desc_{i}")
+        ldate = st.date_input(f"Date {i+1}", value=date.today(), key=f"date_{i}")
         qty = st.number_input(f"Quantité {i+1}", min_value=1, value=item["qty"], key=f"qty_{i}")
         price = st.number_input(f"Prix unitaire {i+1} (FCFA)", min_value=0.0, value=item["price"], key=f"price_{i}")
-        tva = st.checkbox(f"Appliquer TVA 18% à la ligne {i+1}", value=True, key=f"tva_{i}")
 
         if st.button(f"🗑️ Supprimer la ligne {i+1}"):
             st.session_state.facture_items.pop(i)
             st.rerun()
 
         items.append({
-            "description": description,
-            "date": date.strftime("%d/%m/%Y"),
-            "qty": qty,
-            "price": price,
-            "tva": 18 if tva else 0
+            "description": description.strip(),
+            "date": ldate.strftime("%d/%m/%Y"),
+            "qty": int(qty),
+            "price": float(price)
         })
 
-    data = {"client_name": client_name, "client_phone": client_phone, "client_email": client_email, "items": items}
-    html_preview = build_facture_html(data, type_doc="Facture de doit")
     montant = sum(item["qty"] * item["price"] for item in items)
+    avance = st.number_input("Avance payée (FCFA)", min_value=0.0, value=0.0, step=100.0)
+    reliquat = max(montant - avance, 0.0)
+    st.write(f"💰 Reliquat à payer : {reliquat:,.0f} FCFA".replace(",", " "))
+
+    data = {
+        "client_name": client_name.strip(),
+        "client_phone": client_phone.strip(),
+        "client_email": client_email.strip(),
+        "items": items,
+        "avance": avance,
+        "reliquat": reliquat,
+        "montant": montant,
+    }
+    html_preview = build_facture_html(data, type_doc="Facture de doit")
 
 # -------------------------------
 # Reçu
@@ -120,11 +131,19 @@ else:
     client_name = st.text_input("Nom du client")
     client_phone = st.text_input("Téléphone du client")
     client_email = st.text_input("Email du client")
-    amount = st.number_input("Montant payé (FCFA)", min_value=0, value=0)
-    objet = st.text_input("Objet du paiement", "Paiement de services médicaux")
+    amount = st.number_input("Montant payé (FCFA)", min_value=0, value=0, step=100)
+    objet = st.selectbox(
+        "Objet du paiement",
+        ["Achat de matériel médical", "Achat de vêtement", "Achat de chaussures", "Achat divers"]
+    )
 
-    data = {"client_name": client_name, "client_phone": client_phone, "client_email": client_email,
-            "amount": amount, "objet": objet}
+    data = {
+        "client_name": client_name.strip(),
+        "client_phone": client_phone.strip(),
+        "client_email": client_email.strip(),
+        "amount": amount,
+        "objet": objet
+    }
     html_preview = build_facture_html(data, type_doc="Reçu de Paiement")
     montant = amount
 
@@ -138,53 +157,78 @@ if st.button("📄 Générer PDF"):
 
         facture_doc = {
             "type": modele,
-            "client_name": data["client_name"],
-            "client_phone": data["client_phone"],
-            "client_email": data["client_email"],
+            "client_name": data.get("client_name", ""),
+            "client_phone": data.get("client_phone", ""),
+            "client_email": data.get("client_email", ""),
             "items": data.get("items", []),
             "objet": data.get("objet", ""),
             "montant": montant,
+            "avance": data.get("avance", 0.0),
+            "reliquat": data.get("reliquat", 0.0),
             "date": datetime.today().strftime("%Y-%m-%d")
         }
         db.collection("factures").add(facture_doc)
-        st.success("💾 Facture enregistrée dans Firestore")
+        st.success("💾 Document enregistré dans Firestore")
 
         with open(filename, "rb") as f:
             st.download_button("⬇️ Télécharger le PDF", f, file_name=filename, mime="application/pdf")
 
-        # Bouton Imprimer
-st.markdown(f"[🖨️ Imprimer la facture](document.pdf)", unsafe_allow_html=True)
+        # Lien Imprimer (après génération)
+        st.markdown(f"[🖨️ Imprimer la facture]({filename})", unsafe_allow_html=True)
 
-
-        # Bouton Envoyer par SMTP
+# -------------------------------
+# Envoi par email (SMTP)
+# -------------------------------
 if st.button("📧 Envoyer par email (SMTP)"):
-    subject = f"{modele} - {data['client_name']}"
-    body = f"Bonjour {data['client_name']},\n\nVeuillez trouver ci-joint votre {modele}.\nMontant : {montant} FCFA.\n\nCordialement,\nMABOU-INSTRUMED"
+    if not filename:
+        st.error("❌ Veuillez d'abord générer le PDF.")
+    else:
+        subject = f"{modele} - {data.get('client_name','')}"
+        if modele == "Facture de doit":
+            body = (
+                f"Bonjour {data.get('client_name','')},\n\n"
+                f"Veuillez trouver ci-joint votre {modele}.\n"
+                f"Montant total : {data.get('montant', 0):,.0f} FCFA\n"
+                f"Avance : {data.get('avance', 0):,.0f} FCFA\n"
+                f"Reliquat : {data.get('reliquat', 0):,.0f} FCFA\n\n"
+                "Cordialement,\nMABOU-INSTRUMED"
+            ).replace(",", " ")
+        else:
+            body = (
+                f"Bonjour {data.get('client_name','')},\n\n"
+                f"Veuillez trouver ci-joint votre {modele}.\n"
+                f"Montant : {montant:,.0f} FCFA\n"
+                f"Objet : {data.get('objet','')}\n\n"
+                "Cordialement,\nMABOU-INSTRUMED"
+            ).replace(",", " ")
 
-    try:
-        sender = "ton_email@gmail.com"
-        password = "ton_mot_de_passe_app"  # mot de passe d’application Gmail
-        recipient = data["client_email"]
+        try:
+            sender = "ton_email@gmail.com"
+            password = "ton_mot_de_passe_app"  # mot de passe d’application Gmail
+            recipient = data.get("client_email", "")
 
-        msg = MIMEMultipart()
-        msg['From'] = sender
-        msg['To'] = recipient
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
+            if not recipient:
+                st.error("❌ Email du client manquant.")
+            else:
+                msg = MIMEMultipart()
+                msg['From'] = sender
+                msg['To'] = recipient
+                msg['Subject'] = subject
+                msg.attach(MIMEText(body, 'plain'))
 
-        with open(filename, "rb") as f:
-            attach = MIMEApplication(f.read(), _subtype="pdf")
-            attach.add_header('Content-Disposition', 'attachment', filename=filename)
-            msg.attach(attach)
+                with open(filename, "rb") as f:
+                    attach = MIMEApplication(f.read(), _subtype="pdf")
+                    attach.add_header('Content-Disposition', 'attachment', filename=filename)
+                    msg.attach(attach)
 
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
-        server.login(sender, password)
-        server.send_message(msg)
-        server.quit()
+                server = smtplib.SMTP("smtp.gmail.com", 587)
+                server.starttls()
+                server.login(sender, password)
+                server.send_message(msg)
+                server.quit()
 
-        st.success("✅ Email envoyé avec succès")
-    except Exception as e:
-        st.error(f"❌ Erreur envoi email : {e}")
+                st.success("✅ Email envoyé avec succès")
+        except Exception as e:
+            st.error(f"❌ Erreur envoi email : {e}")
 
 conn.close()
