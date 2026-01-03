@@ -99,7 +99,7 @@ if modele == "Facture de doit":
 
         if st.button(f"🗑️ Supprimer la ligne {i+1}"):
             st.session_state.facture_items.pop(i)
-            st.experimental_rerun()
+            st.rerun()
 
         items.append({
             "description": description,
