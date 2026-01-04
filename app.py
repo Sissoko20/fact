@@ -1,14 +1,9 @@
 import streamlit as st
-from streamlit_option_menu import option_menu
 from components.sidebar import render_sidebar
-# -------------------------------
-# Configuration de la page
-# -------------------------------
+
 st.set_page_config(page_title="Tableau de bord", page_icon="📊", layout="wide")
 
-# -------------------------------
 # Vérification d'authentification
-# -------------------------------
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
@@ -17,11 +12,10 @@ if not st.session_state["authenticated"]:
     st.switch_page("pages/Login.py")
     st.stop()
 
-# Appel du composant sidebar 
+# Sidebar
 selected = render_sidebar(default_index=0)
-# -------------------------------
-# Logique de navigation
-# -------------------------------
+
+# Contenu principal : uniquement si Tableau de bord
 if selected == "🏠 Tableau de bord":
     st.image("assets/logo.png", width=150)
     st.title("Bienvenue sur MABOU-INSTRUMED Facturation")
@@ -52,18 +46,7 @@ if selected == "🏠 Tableau de bord":
     st.markdown("---")
     st.caption("© 2025 MABOU-INSTRUMED - Système de gestion des factures et reçus médicaux")
 
-elif selected == "Analyse de donnees":
-    st.switch_page("pages/Data_analyse.py")
-
-elif selected == "🧾 Factures":
-    st.switch_page("pages/Previsualisation.py")
-
-elif selected == "💰 Reçus":
-    st.switch_page("pages/Previsualisation.py")
-
-elif selected == "👥 Utilisateurs":
-    st.switch_page("pages/Admin.py")
-
+# Déconnexion
 elif selected == "🔒 Déconnexion":
     st.session_state["authenticated"] = False
     st.info("✅ Déconnecté")
