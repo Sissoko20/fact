@@ -8,6 +8,8 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
+from components.sidebar import render_sidebar
+
 
 # -------------------------------
 # Vérification d'authentification
@@ -21,18 +23,8 @@ if not st.session_state["authenticated"]:
     st.stop()
 
 # -------------------------------
-# Barre de navigation moderne
-# -------------------------------
-with st.sidebar:
-    st.image("assets/logo.png", width=120)
-    selected = option_menu(
-        "Navigation",
-        ["🏠 Tableau de bord", "🧾 Facture de doit", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
-        icons=["house", "file-text", "cash", "people", "box-arrow-right"],
-        menu_icon="cast",
-        default_index=1,
-    )
-
+# Appel du composant sidebar 
+selected = render_sidebar(default_index=0)
 # -------------------------------
 # Redirections via menu
 # -------------------------------

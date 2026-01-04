@@ -3,7 +3,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from streamlit_option_menu import option_menu
 from firebase_admin_setup import db
-
+from components.sidebar import render_sidebar
 # -------------------------------
 # Configuration
 # -------------------------------
@@ -14,25 +14,15 @@ st.set_page_config(page_title="Analyse des données", page_icon="📊", layout="
 # -------------------------------
 if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
     st.error("⛔ Vous devez être connecté")
+    st.switch_page("pages/Login.py")
     st.stop()
 
 if st.session_state.get("role") != "admin":
     st.error("⛔ Accès réservé aux administrateurs")
     st.stop()
 
-# -------------------------------
-# Barre de navigation moderne
-# -------------------------------
-with st.sidebar:
-    st.image("assets/logo.png", width=120)
-    selected = option_menu(
-        "Navigation",
-        ["🏠 Tableau de bord", "Analyse de donnees", "🧾 Factures", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
-        icons=["house", "bar-chart", "file-text", "cash", "people", "box-arrow-right"],
-        menu_icon="cast",
-        default_index=1,  # 👉 active Analyse de donnees
-    )
-
+# Appel du composant sidebar 
+selected = render_sidebar(default_index=0)
 # -------------------------------
 # Logique de navigation
 # -------------------------------

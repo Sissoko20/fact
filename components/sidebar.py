@@ -1,24 +1,32 @@
 import streamlit as st
+from streamlit_option_menu import option_menu
 
-def sidebar_navigation():
+# Dictionnaire qui mappe chaque menu à une page cible
+MENU_LINKS = {
+    "🏠 Tableau de bord": "app.py",
+    "Analyse de donnees": "pages/Data_analyse.py",
+    "🧾 Factures": "pages/Previsualisation.py",
+    "💰 Reçus": "pages/Previsualisation.py",
+    "👥 Utilisateurs": "pages/Admin.py",
+    "🔒 Déconnexion": "pages/Login.py",
+}
+
+def render_sidebar(default_index=0):
+    """Affiche la barre latérale et gère la navigation."""
     with st.sidebar:
-        st.markdown("## 🧭 Navigation")
+        st.image("assets/logo.png", width=120)
+        selected = option_menu(
+            "Navigation",
+            list(MENU_LINKS.keys()),
+            icons=["house", "bar-chart", "file-text", "cash", "people", "box-arrow-right"],
+            menu_icon="cast",
+            default_index=default_index,
+        )
 
-        # Section Documents
-        st.page_link("pages/Home.py", label="🏠 Accueil")
-        st.page_link("pages/Previsualisation.py", label="🧾 Factures")
-        st.page_link("pages/Previsualisation.py", label="💰 Reçus")
-
-        st.markdown("---")
-
-        # Section Analyse
-        st.page_link("pages/Dashboard.py", label="📊 Dashboard")
-
-        st.markdown("---")
-
-        # Section Administration
-        st.page_link("pages/Gestion.py", label="👥 Gestion utilisateurs")
-        st.page_link("pages/Login.py", label="🔒 Déconnexion")
-
-    # Tu peux retourner un paramètre si tu veux gérer un thème clair/sombre
-    return "Sombre"
+    # Gestion des redirections
+    if selected == "🔒 Déconnexion":
+        st.session_state["authenticated"] = False
+        st.info("✅ Déconnecté")
+        st.switch_page(MENU_LINKS[selected])
+    else:
+        st.switch_page(MENU_LINKS[selected])

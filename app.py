@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
-
+from components.sidebar import render_sidebar
 # -------------------------------
 # Configuration de la page
 # -------------------------------
@@ -17,19 +17,8 @@ if not st.session_state["authenticated"]:
     st.switch_page("pages/Login.py")
     st.stop()
 
-# -------------------------------
-# Barre de navigation moderne
-# -------------------------------
-with st.sidebar:
-    st.image("assets/logo.png", width=120)
-    selected = option_menu(
-        "Navigation",
-        ["🏠 Tableau de bord", "Analyse de donnees", "🧾 Factures", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
-        icons=["house", "bar-chart", "file-text", "cash", "people", "box-arrow-right"],
-        menu_icon="cast",
-        default_index=0,
-    )
-
+# Appel du composant sidebar 
+selected = render_sidebar(default_index=0)
 # -------------------------------
 # Logique de navigation
 # -------------------------------
