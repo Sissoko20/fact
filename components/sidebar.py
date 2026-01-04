@@ -12,7 +12,7 @@ MENU_LINKS = {
 }
 
 def render_sidebar(default_index=0):
-    """Affiche la barre latérale et gère la navigation."""
+    """Affiche la barre latérale et retourne l'élément sélectionné."""
     with st.sidebar:
         st.image("assets/logo.png", width=120)
         selected = option_menu(
@@ -22,11 +22,4 @@ def render_sidebar(default_index=0):
             menu_icon="cast",
             default_index=default_index,
         )
-
-    # Gestion des redirections
-    if selected == "🔒 Déconnexion":
-        st.session_state["authenticated"] = False
-        st.info("✅ Déconnecté")
-        st.switch_page(MENU_LINKS[selected])
-    else:
-        st.switch_page(MENU_LINKS[selected])
+    return selected
