@@ -3,14 +3,26 @@ from streamlit_option_menu import option_menu
 from firebase_admin_setup import db   # ton module qui initialise Firebase
 
 # -------------------------------
-# Vérification d'authentification
+# Configuration
+# -------------------------------
+st.set_page_config(page_title="Gestion des utilisateurs", page_icon="👥", layout="wide")
+
+# -------------------------------
+# Vérification d'authentification et rôle
 # -------------------------------
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
+# 👉 Vérifie si connecté
 if not st.session_state["authenticated"]:
     st.warning("⚠️ Veuillez vous connecter d'abord.")
     st.switch_page("pages/Login.py")
+    st.stop()
+
+# 👉 Vérifie si admin
+if st.session_state.get("role") != "admin":
+    st.warning("⛔ Accès réservé. Veuillez contacter votre administrateur.")
+    st.switch_page("app.py")
     st.stop()
 
 # -------------------------------

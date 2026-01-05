@@ -12,12 +12,19 @@ st.set_page_config(page_title="Analyse des données", page_icon="📊", layout="
 # -------------------------------
 # Vérification session persistante
 # -------------------------------
-if "authenticated" not in st.session_state or not st.session_state["authenticated"]:
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+
+# 👉 Vérifie si connecté
+if not st.session_state["authenticated"]:
     st.error("⛔ Vous devez être connecté")
+    st.switch_page("pages/Login.py")
     st.stop()
 
+# 👉 Vérifie si admin
 if st.session_state.get("role") != "admin":
-    st.error("⛔ Accès réservé aux administrateurs")
+    st.warning("⛔ Accès réservé. Veuillez contacter votre administrateur.")
+    st.switch_page("app.py")
     st.stop()
 
 # -------------------------------
