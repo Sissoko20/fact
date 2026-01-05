@@ -1,34 +1,30 @@
 import streamlit as st
+from streamlit_option_menu import option_menu
 from firebase_admin_setup import db   # ton module qui initialise Firebase
-from components.sidebar import render_sidebar
 
 # -------------------------------
-# Configuration de la page
-# -------------------------------
-st.set_page_config(page_title="Gestion des utilisateurs", page_icon="👥", layout="wide")
-
-# -------------------------------
-# Vérification d'authentification et rôle
+# Vérification d'authentification
 # -------------------------------
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 
-# Si non connecté → redirection
 if not st.session_state["authenticated"]:
     st.warning("⚠️ Veuillez vous connecter d'abord.")
     st.switch_page("pages/Login.py")
     st.stop()
 
-# Si connecté mais pas admin → redirection
-if st.session_state.get("role") != "admin":
-    st.error("⛔ Accès réservé aux administrateurs")
-    st.switch_page("pages/Login.py")
-    st.stop()
-
 # -------------------------------
-# Barre latérale
+# Barre de navigation moderne
 # -------------------------------
-selected = render_sidebar(default_index=3)  # Admin actif
+with st.sidebar:
+    st.image("assets/logo.png", width=120)
+    selected = option_menu(
+        "Navigation",
+        ["🏠 Tableau de bord", "🧾 Factures", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
+        icons=["house", "file-text", "cash", "people", "box-arrow-right"],
+        menu_icon="cast",
+        default_index=3,  # 👉 Admin actif
+    )
 
 # -------------------------------
 # Redirections via menu
