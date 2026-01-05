@@ -8,13 +8,7 @@ port = 8501
 [browser]
 gatherUsageStats = true
 
-[theme]
-base = "dark"
-primaryColor = "#003366"
-backgroundColor = "#1e1e1e"
-secondaryBackgroundColor = "#2c2c2c"
-textColor = "#ffffff"
-font = "sans serif"
+
 
 [client]
 # Désactive la navigation automatique du dossier pages
