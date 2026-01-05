@@ -53,8 +53,9 @@ def build_facture_html(data, type_doc="Facture"):
             </tr>
             """
 
-        avance = data.get("avance", 0.0)
-        reliquat = data.get("reliquat", total_ht - avance)
+        montant_total = data.get("montant_total", total_ht)
+        montant_paye = data.get("montant_paye", 0.0)
+        reliquat = data.get("reliquat", montant_total - montant_paye)
         objet = data.get("objet", "")
 
         html = f"""
@@ -93,8 +94,8 @@ def build_facture_html(data, type_doc="Facture"):
                 </tbody>
             </table>
 
-            <p><b>Total :</b> {format_number(total_ht)} FCFA</p>
-            <p><b>Avance :</b> {format_number(avance)} FCFA</p>
+            <p><b>Montant total :</b> {format_number(montant_total)} FCFA</p>
+            <p><b>Montant payé :</b> {format_number(montant_paye)} FCFA</p>
             <p><b>Reliquat :</b> {format_number(reliquat)} FCFA</p>
 
             <hr>
@@ -110,6 +111,7 @@ def build_facture_html(data, type_doc="Facture"):
 
     # ---------------- REÇU ----------------
     elif type_doc == "Reçu de Paiement":
+        montant_paye = data.get("montant_paye", 0.0)
         html = f"""
         {css_style}
         <div style="width:650px; padding:10px;">
@@ -134,7 +136,7 @@ def build_facture_html(data, type_doc="Facture"):
             <h3>REÇU DE PAIEMENT</h3>
 
             <p><b>Objet :</b> {data.get('objet','')}</p>
-            <p><b>Montant payé :</b> {format_number(data.get('amount',0))} FCFA</p>
+            <p><b>Montant payé :</b> {format_number(montant_paye)} FCFA</p>
 
             <hr>
             <div class="signature">

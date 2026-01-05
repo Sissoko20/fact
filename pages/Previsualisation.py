@@ -4,10 +4,6 @@ from datetime import datetime, date
 from streamlit_option_menu import option_menu
 from components.pdf_generator import generate_pdf, build_facture_html
 from firebase_admin_setup import db
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-from email.mime.application import MIMEApplication
 
 # -------------------------------
 # Vérification d'authentification
@@ -52,7 +48,7 @@ st.title("📝 Prévisualisation")
 
 modele = st.selectbox("Choisissez un modèle", ["Facture de doit", "Reçu de Paiement"])
 
-# Connexion DB (facultatif si tu utilises Firestore)
+# Connexion DB locale (facultatif si tu utilises Firestore)
 conn = sqlite3.connect("data/factures.db")
 cursor = conn.cursor()
 cursor.execute("""
@@ -108,9 +104,10 @@ if modele == "Facture de doit":
             "price": float(price)
         })
 
-    montant = sum(item["qty"] * item["price"] for item in items)
+    montant_total = sum(item["qty"] * item["price"] for item in items)
     avance = st.number_input("Avance payée (FCFA)", min_value=0.0, value=0.0, step=100.0)
-    reliquat = max(montant - avance, 0.0)
+    reliquat = max(montant_total - avance, 0.0)
+
     st.write(f"💰 Reliquat à payer : {reliquat:,.0f} FCFA".replace(",", " "))
 
     data = {
@@ -118,9 +115,10 @@ if modele == "Facture de doit":
         "client_phone": client_phone.strip(),
         "client_email": client_email.strip(),
         "items": items,
+        "montant_total": montant_total,   # montant théorique
+        "montant_paye": avance,           # montant réellement perçu
         "avance": avance,
         "reliquat": reliquat,
-        "montant": montant,
     }
     html_preview = build_facture_html(data, type_doc="Facture de doit")
 
@@ -131,7 +129,7 @@ else:
     client_name = st.text_input("Nom du client")
     client_phone = st.text_input("Téléphone du client")
     client_email = st.text_input("Email du client")
-    amount = st.number_input("Montant payé (FCFA)", min_value=0, value=0, step=100)
+    montant_paye = st.number_input("Montant payé (FCFA)", min_value=0, value=0, step=100)
     objet = st.selectbox(
         "Objet du paiement",
         ["Achat de matériel médical", "Achat de vêtement", "Achat de chaussures", "Achat divers"]
@@ -141,11 +139,10 @@ else:
         "client_name": client_name.strip(),
         "client_phone": client_phone.strip(),
         "client_email": client_email.strip(),
-        "amount": amount,
+        "montant_paye": montant_paye,
         "objet": objet
     }
     html_preview = build_facture_html(data, type_doc="Reçu de Paiement")
-    montant = amount
 
 # -------------------------------
 # Génération PDF + Sauvegarde
@@ -162,7 +159,8 @@ if st.button("📄 Générer PDF"):
             "client_email": data.get("client_email", ""),
             "items": data.get("items", []),
             "objet": data.get("objet", ""),
-            "montant": montant,
+            "montant_total": data.get("montant_total", 0.0),
+            "montant_paye": data.get("montant_paye", 0.0),
             "avance": data.get("avance", 0.0),
             "reliquat": data.get("reliquat", 0.0),
             "date": datetime.today().strftime("%Y-%m-%d")
@@ -172,6 +170,5 @@ if st.button("📄 Générer PDF"):
 
         with open(filename, "rb") as f:
             st.download_button("⬇️ Télécharger le PDF", f, file_name=filename, mime="application/pdf")
-
 
 conn.close()
