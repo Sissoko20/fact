@@ -31,7 +31,3 @@ with st.form("login_form"):
             st.switch_page("app.py")
         else:
             st.error("❌ Email ou mot de passe incorrect")
-
-# 👉 Bouton pour créer un compte
-if st.button("🧾 Créer un compte"):
-    st.switch_page("pages/Admin.py")
