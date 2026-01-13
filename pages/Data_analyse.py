@@ -70,7 +70,14 @@ st.dataframe(df)
 
 # Aperçu global
 st.subheader("📊 Aperçu global")
-if not df.empty:
+
+colonnes_requises = ["type", "montant"]
+colonnes_absentes = [col for col in colonnes_requises if col not in df.columns]
+
+if not df.empty and not colonnes_absentes:
+    # Nettoyage des valeurs manquantes
+    df["montant"] = pd.to_numeric(df["montant"], errors="coerce").fillna(0)
+
     total_factures = df[df["type"] == "Facture de doit"]["montant"].sum()
     total_recus = df[df["type"] == "Reçu de Paiement"]["montant"].sum()
     total_global = df["montant"].sum()
@@ -81,6 +88,8 @@ if not df.empty:
     col2.metric("Reçus totaux", f"{total_recus:,.0f} FCFA")
     col3.metric("Montant Global", f"{total_global:,.0f} FCFA")
     col4.metric("Documents générés", nb_docs)
+elif not df.empty:
+    st.warning(f"Colonnes manquantes : {', '.join(colonnes_absentes)}")
 else:
     st.info("Aucune donnée disponible.")
 
@@ -96,54 +105,82 @@ else:
 
 # Visualisations
 st.subheader("📈 Visualisations")
-if not df.empty:
+
+if not df.empty and "montant" in df.columns:
     chart_type = st.selectbox("Type de graphique :", ["Barres", "Camembert", "Courbe", "Histogramme"])
     col_x = st.selectbox("Colonne X :", df.columns)
     col_y = st.selectbox("Colonne Y :", df.columns)
 
     if st.button("Générer le graphique"):
-        fig, ax = plt.subplots(figsize=(6,4))
-        if chart_type == "Barres":
-            df.groupby(col_x)[col_y].sum().plot(kind="bar", ax=ax)
-        elif chart_type == "Camembert":
-            df.groupby(col_x)[col_y].sum().plot(kind="pie", autopct='%1.1f%%', ax=ax)
-        elif chart_type == "Courbe":
-            df.groupby(col_x)[col_y].sum().plot(kind="line", ax=ax, marker="o")
-        elif chart_type == "Histogramme":
-            df[col_y].plot(kind="hist", ax=ax, bins=10)
-        st.pyplot(fig)
+        try:
+            fig, ax = plt.subplots(figsize=(6, 4))
+            if chart_type == "Barres":
+                df.groupby(col_x)[col_y].sum().plot(kind="bar", ax=ax)
+            elif chart_type == "Camembert":
+                df.groupby(col_x)[col_y].sum().plot(kind="pie", autopct='%1.1f%%', ax=ax)
+            elif chart_type == "Courbe":
+                df.groupby(col_x)[col_y].sum().plot(kind="line", ax=ax, marker="o")
+            elif chart_type == "Histogramme":
+                df[col_y].plot(kind="hist", ax=ax, bins=10)
+            st.pyplot(fig)
+        except Exception as e:
+            st.error(f"Erreur lors de la génération du graphique : {e}")
+else:
+    st.info("Données insuffisantes pour générer un graphique.")
 
 # Comparaison Factures vs Reçus
 st.subheader("⚖️ Comparaison Factures vs Reçus")
-if not df.empty and "date" in df.columns:
-    df["date"] = pd.to_datetime(df["date"])
+
+if not df.empty and {"date", "type", "montant"}.issubset(df.columns):
+    # Conversion sécurisée des dates
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"])
+
     min_date, max_date = df["date"].min(), df["date"].max()
-    start_date = st.date_input("Date de début", min_date)
-    end_date = st.date_input("Date de fin", max_date)
+    if pd.notna(min_date) and pd.notna(max_date):
+        start_date = st.date_input("Date de début", min_date)
+        end_date = st.date_input("Date de fin", max_date)
 
-    df_periode = df[(df["date"] >= pd.to_datetime(start_date)) & (df["date"] <= pd.to_datetime(end_date))]
+        df_periode = df[(df["date"] >= pd.to_datetime(start_date)) & (df["date"] <= pd.to_datetime(end_date))]
 
-    if not df_periode.empty:
-        comparaison = df_periode.groupby("type")["montant"].sum()
-        col1, col2 = st.columns(2)
-        with col1:
-            st.bar_chart(comparaison)
-        with col2:
-            fig, ax = plt.subplots()
-            comparaison.plot.pie(autopct='%1.1f%%', ax=ax)
-            ax.set_ylabel("")
-            st.pyplot(fig)
+        if not df_periode.empty:
+            comparaison = df_periode.groupby("type")["montant"].sum()
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.bar_chart(comparaison)
+            with col2:
+                fig, ax = plt.subplots()
+                comparaison.plot.pie(autopct='%1.1f%%', ax=ax)
+                ax.set_ylabel("")
+                st.pyplot(fig)
+        else:
+            st.warning("Aucune donnée dans cette période.")
     else:
-        st.warning("Aucune donnée dans cette période.")
+        st.warning("Dates invalides ou manquantes.")
+else:
+    st.info("Colonnes nécessaires absentes pour la comparaison (date, type, montant).")
 
-# Evolution mensuelle
+# Évolution mensuelle
 st.subheader("📅 Évolution mensuelle")
-if not df.empty and "date" in df.columns:
-    df["date"] = pd.to_datetime(df["date"])
+
+if not df.empty and {"date", "type", "montant"}.issubset(df.columns):
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+    df = df.dropna(subset=["date"])
+
+    # Extraire le mois
     df["mois"] = df["date"].dt.to_period("M").astype(str)
+
+    # Agrégation sécurisée
     evolution = df.groupby(["mois", "type"])["montant"].sum().unstack().fillna(0)
-    st.line_chart(evolution)
-    st.dataframe(evolution, use_container_width=True)
+
+    if not evolution.empty:
+        st.line_chart(evolution)
+        st.dataframe(evolution, use_container_width=True)
+    else:
+        st.warning("Pas de données valides pour l'évolution mensuelle.")
+else:
+    st.info("Colonnes nécessaires absentes pour l'évolution mensuelle (date, type, montant).")
 
 # CRUD
 st.subheader("⚙️ Gestion de la base (Admin uniquement)")
