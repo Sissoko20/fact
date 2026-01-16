@@ -63,7 +63,7 @@ if selected == "🏠 Tableau de bord":
     st.markdown("---")
     st.caption("© 2025 MABOU-INSTRUMED - Système de gestion des factures et reçus médicaux")
 
-elif selected == "Gerer vos factures":
+elif selected == "📊 Gerer vos factures": 
     st.switch_page("pages/Data_analyse.py")
 
 elif selected == "🧾 Factures":
