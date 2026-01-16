@@ -24,7 +24,7 @@ with st.sidebar:
     st.image("assets/logo.png", width=120)
     selected = option_menu(
         "Navigation",
-        ["🏠 Tableau de bord", "Analyse de donnees", "🧾 Factures", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
+        ["🏠 Tableau de bord", "📊 Gerer vos factures", "🧾 Factures", "💰 Reçus", "👥 Utilisateurs", "🔒 Déconnexion"],
         icons=["house", "bar-chart", "file-text", "cash", "people", "box-arrow-right"],
         menu_icon="cast",
         default_index=0,
@@ -56,14 +56,14 @@ if selected == "🏠 Tableau de bord":
             st.switch_page("pages/Admin.py")
 
     with col4:
-        st.markdown("### 📊 Analyse des données")
+        st.markdown("### 📊 Gérer vos factures")
         if st.button("🔑 Data Analyse"):
             st.switch_page("pages/Data_analyse.py")
 
     st.markdown("---")
     st.caption("© 2025 MABOU-INSTRUMED - Système de gestion des factures et reçus médicaux")
 
-elif selected == "Analyse de donnees":
+elif selected == "Gerer vos factures":
     st.switch_page("pages/Data_analyse.py")
 
 elif selected == "🧾 Factures":

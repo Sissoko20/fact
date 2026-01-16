@@ -14,6 +14,7 @@ def generate_pdf(html_content, filename="document.pdf"):
 def build_facture_html(data, type_doc="Facture"):
     logo_path = "assets/logo.png"
     signature_path = "assets/signature.png"
+    signature2_path = "assets/signature2.png"
     today = datetime.today().strftime("%d/%m/%Y")
 
     css_style = """
@@ -101,7 +102,7 @@ def build_facture_html(data, type_doc="Facture"):
             <hr>
             <div class="signature">
                 <p style="margin:0;">Fait à Bamako, le {today}</p>
-                <img src="{signature_path}" width="220">
+                <img src="{signature2_path}" width="220">
             </div>
 
             {footer_text}

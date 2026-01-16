@@ -1,6 +1,7 @@
 import streamlit as st
 from streamlit_option_menu import option_menu
 from firebase_admin_setup import db   # ton module qui initialise Firebase
+import uuid
 
 # -------------------------------
 # Configuration
@@ -57,6 +58,8 @@ elif selected == "🔒 Déconnexion":
 # -------------------------------
 st.title("👥 Gestion des utilisateurs")
 
+
+
 # --- Formulaire d'inscription ---
 st.subheader("🧾 Créer un nouvel utilisateur")
 with st.form("signup_form"):
@@ -67,9 +70,13 @@ with st.form("signup_form"):
 
     if submit:
         if email and password:
+            # Générer un identifiant unique
+            user_id = str(uuid.uuid4())   # ou simplement utiliser l'email comme identifiant
+
             user_doc = {
+                "user_id": user_id,        # 👉 champ ajouté
                 "email": email,
-                "password": password,   # ⚠️ à hasher en production
+                "password": password,      # ⚠️ à hasher en production
                 "role": role
             }
             db.collection("users").add(user_doc)

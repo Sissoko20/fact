@@ -19,7 +19,8 @@ def create_user(email: str, password: str, role: str = "user") -> str:
         db.collection("users").document(user.uid).set({
             "email": email,
             "password": password,   # ⚠️ à remplacer par un hash en prod
-            "role": role
+            "role": role,
+            "user_id": user.uid     # ✅ stocker l'UID pour filtrer les factures
         })
         logging.info(f"Utilisateur {email} créé avec rôle {role}")
         return user.uid
@@ -43,10 +44,10 @@ def get_user_role(email: str) -> str | None:
         logging.warning(f"Erreur lors de la récupération du rôle pour {email}: {e}")
         return None
 
-def verify_user(email: str, password: str) -> str | None:
+def verify_user(email: str, password: str) -> dict | None:
     """
     Vérifie si un utilisateur existe avec email + mot de passe.
-    Retourne son rôle si trouvé, sinon None.
+    Retourne un dict {role, user_id, email} si trouvé, sinon None.
     ⚠️ Firebase Admin SDK ne permet pas de vérifier directement le mot de passe.
     👉 Ici, on simule avec Firestore (non sécurisé).
     """
@@ -56,7 +57,11 @@ def verify_user(email: str, password: str) -> str | None:
         for u in users_ref:
             data = u.to_dict()
             if data.get("password") == password:  # ⚠️ comparer un hash en prod
-                return data.get("role", "user")
+                return {
+                    "role": data.get("role", "user"),
+                    "user_id": data.get("user_id", u.id),  # ✅ récupère l'UID
+                    "email": data.get("email")
+                }
         return None
     except Exception as e:
         logging.error(f"Erreur lors de la vérification de l'utilisateur {email}: {e}")

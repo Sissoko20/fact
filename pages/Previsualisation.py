@@ -10,9 +10,18 @@ from firebase_admin_setup import db
 # -------------------------------
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
+    st.session_state["role"] = None
+    st.session_state["email"] = None
+    st.session_state["user_id"] = None
 
 if not st.session_state["authenticated"]:
     st.warning("⚠️ Veuillez vous connecter d'abord.")
+    st.switch_page("pages/Login.py")
+    st.stop()
+
+# 👉 Vérifie que l'identifiant utilisateur est bien présent
+if not st.session_state.get("user_id"):
+    st.error("⛔ Identifiant utilisateur manquant. Veuillez vous reconnecter.")
     st.switch_page("pages/Login.py")
     st.stop()
 
@@ -115,8 +124,8 @@ if modele == "Facture de doit":
         "client_phone": client_phone.strip(),
         "client_email": client_email.strip(),
         "items": items,
-        "montant_total": montant_total,   # montant théorique
-        "montant_paye": avance,           # montant réellement perçu
+        "montant_total": montant_total,
+        "montant_paye": avance,
         "avance": avance,
         "reliquat": reliquat,
     }
@@ -163,8 +172,13 @@ if st.button("📄 Générer PDF"):
             "montant_paye": data.get("montant_paye", 0.0),
             "avance": data.get("avance", 0.0),
             "reliquat": data.get("reliquat", 0.0),
-            "date": datetime.today().strftime("%Y-%m-%d")
+            "date": datetime.today().strftime("%Y-%m-%d"),
+
+            # 👉 Ajout du champ utilisateur (corrigé)
+            "user_id": st.session_state["user_id"],   # doit être défini au login
+            "role": st.session_state.get("role", "user")
         }
+
         db.collection("factures").add(facture_doc)
         st.success("💾 Document enregistré dans Firestore")
 

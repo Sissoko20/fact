@@ -4,7 +4,7 @@ from streamlit_option_menu import option_menu
 # Dictionnaire qui mappe chaque menu à une page cible
 MENU_LINKS = {
     "🏠 Tableau de bord": "app.py",
-    "Analyse de donnees": "pages/Data_analyse.py",
+    "Gerer mes factures": "pages/Data_analyse.py",
     "🧾 Factures": "pages/Previsualisation.py",
     "💰 Reçus": "pages/Previsualisation.py",
     "👥 Utilisateurs": "pages/Admin.py",

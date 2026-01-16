@@ -8,6 +8,7 @@ if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
     st.session_state["role"] = None
     st.session_state["email"] = None
+    st.session_state["user_id"] = None
 
 # Si déjà connecté → redirection
 if st.session_state["authenticated"]:
@@ -22,12 +23,16 @@ with st.form("login_form"):
     submit = st.form_submit_button("Se connecter")
 
     if submit:
-        role = verify_user(email, password)  # ✅ vérifie email + mot de passe
-        if role:
+        # ⚡️ verify_user renvoie maintenant un dict {role, user_id, email}
+        user_data = verify_user(email, password)
+
+        if user_data:
             st.session_state["authenticated"] = True
-            st.session_state["role"] = role
-            st.session_state["email"] = email
-            st.success(f"✅ Connecté en tant que {role}")
+            st.session_state["role"] = user_data["role"]
+            st.session_state["email"] = user_data["email"]
+            st.session_state["user_id"] = user_data["user_id"]
+
+            st.success(f"✅ Connecté en tant que {user_data['role']}")
             st.switch_page("app.py")
         else:
             st.error("❌ Email ou mot de passe incorrect")
